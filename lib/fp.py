@@ -10,39 +10,36 @@ from org.lsst.ccs.utilities.image.samp import SampUtils
 from java.io import File
 from java.time import Duration
 
-CCS.setThrowExceptions(True)
-fp = CCS.attachSubsystem("focal-plane")
+#CCS.setThrowExceptions(True)
+#fp = CCS.attachSubsystem("focal-plane")
 
-def sanityCheck():
-   #biasOn = fp.sendSynchCommand("isBackBiasOn")
+def sanityCheck(ccs_sub):
+   #biasOn = ccs_sub.fp.sendSynchCommand("isBackBiasOn")
    #if not biasOn:
    #  print "WARNING: Back bias is not on"
 
-   alerts = fp.sendSynchCommand("getRaisedAlertSummary")
+   alerts = ccs_sub.fp.sendSynchCommand("getRaisedAlertSummary")
    if alerts.alertState!=AlertState.NOMINAL:
-      print "WARNING: fo0cal-plane subsystem is in alarm state %s" % alerts.alertState 
+      print "WARNING: focal-plane subsystem is in alarm state %s" % alerts.alertState 
 
-def clear():
+def clear(ccs_sub):
    print "Clearing CCDs "
-   fp.sendSynchCommand("clear",1)
-   fp.sendSynchCommand("waitForSequencer", Duration.ofSeconds(10))
+   ccs_sub.fp.sendSynchCommand(10, "clear",1)
+   ccs_sub.fp.sendSynchCommand("waitForSequencer", Duration.ofSeconds(10))
 
-def takeBias():
-   sanityCheck()
-   clear()
-   imageName = fp.sendSynchCommand("startIntegration")
+def takeBias(ccs_sub):
+   sanityCheck(ccs_sub)
+   clear(ccs_sub)
+   imageName = ccs_sub.fp.sendSynchCommand(10,"startIntegration")
    print "Image name: %s" % imageName
-   fp.sendSynchCommand("endIntegration")
-   result = fp.sendSynchCommand("waitForFitsFiles", Duration.ofSeconds(30))
-   print "Saved FITS files to %s" % result
+   ccs_sub.fp.sendSynchCommand(10,"endIntegration")
+   return (imageName, ccs_sub.fp.sendSynchCommand("waitForFitsFiles", Duration.ofSeconds(30)))
 
-def takeExposure(exposeCommand):
-   sanityCheck()
-   clear()
-   imageName = fp.sendSynchCommand("startIntegration")
+def takeExposure(ccs_sub, exposeCommand):
+   sanityCheck(ccs_sub)
+   clear(ccs_sub)
+   imageName = ccs_sub.fp.sendSynchCommand("startIntegration")
    print "Image name: %s" % imageName
    exposeCommand()
-   fp.sendSynchCommand("endIntegration")
-   result = fp.sendSynchCommand("waitForFitsFiles", Duration.ofSeconds(30))
-   print "Saved FITS files to %s" % result
-
+   ccs_sub.fp.sendSynchCommand("endIntegration")
+   return (imageName, ccs_sub.fp.sendSynchCommand("waitForFitsFiles", Duration.ofSeconds(30)))    

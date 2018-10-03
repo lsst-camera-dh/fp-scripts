@@ -1,40 +1,56 @@
 import fp
 import bot_bench
+import os
 
-def do_bias(options):
+def symlink(options, imageName, fileList, imagetype):
+      print "Saved %d FITS files to %s" % (fileList.size(),fileList.getCommonParentDirectory())
+      activity = int(options['activity'])
+      run = int(options['run']);
+      output = options['output'];
+      acqtype = options['acqtype']
+      symdir = "%s/LCA-10134_Cryostat/LCA-10134_Cryostat-0001/%06d/%s/%08d" % (output, run, acqtype, activity)
+      symname = "%s/%s-%06d" % (symdir, imagetype,  imageName.number)
+      if not os.path.exists(symdir): 
+         os.makedirs(symdir);
+      os.symlink(fileList.getCommonParentDirectory().toString(), symname)
+      print "Symlinked from %s" % symname; 
+   
+def do_bias(ccs_sub, options):
    print "bias called %s" % options
    count = int(options.get('count','10'))
    for i in range(count):
-      fp.takeBias()
+      imageName,fileList = fp.takeBias(ccs_sub)
+      symlink(options,imageName,fileList,'BIAS')
 
-def do_fe55(options):
+def do_fe55(ccs_sub, options):
    print "fe55 called %s" % options
 
-def do_dark(options):
+def do_dark(ccs_sub, options):
    print "dark called %s" % options
 
-def do_persistence(options):
+def do_persistence(ccs_sub, options):
    print "persistence called %s" % options
 
-def do_flat(options):
+def do_flat(ccs_sub, options):
    print "flat called %s" % options
    bcount = int(options.get('bcount','1'))
    wl = options.get('wl')
-   bot_bench.setColorFilter(wl)
+   bot_bench.setColorFilter(ccs_sub, wl)
    flats = options.get('flat').replace('\n','').split(',')
    for flat in flats:
+     for i in range(bcount):
+        imageName,fileList = fp.takeBias(ccs_sub)
+        symlink(options,imageName,fileList,'BIAS')
      e_per_pixel,filter = flat.split()
      exposure = int(e_per_pixel)/100.0	
      print "e %s filter %s" % (exposure,filter)   
-     bot_bench.setNDFilter(filter)
-     exposeCommand = lambda: bot_bench.openShutter(exposure)
-     fp.takeExposure(exposeCommand)
+     bot_bench.setNDFilter(ccs_sub, filter)
+     exposeCommand = lambda: bot_bench.openShutter(ccs_sub, exposure)
+     imageName,fileList = fp.takeExposure(ccs_sub, exposeCommand)
+     symlink(options,imageName,fileList,'FLAT')
 
-#flat called {'hilim': '800.0', 'lolim': '0.025', 'bcount': '1', 'wl': 'SDSS_i', 'flat': '100   ND_OD0.5,\n1000   ND_OD0.4,\n10000   ND_OD0.3,\n100000   ND_OD0.2,\n200000   ND_OD0.1', 'dry_run': None}
-
-   
-def do_sflat(options):
+def do_sflat(ccs_sub, options):
    print "superflat called %s" % options
 
-def do_lambda(options):
+def do_lambda(ccs_sub, options):
    print "lambda called %s" % options
