@@ -28,5 +28,5 @@ def setColorFilter(ccs_sub, filter):
 def openShutter(ccs_sub, exposure):
    sanityCheck(ccs_sub)
    print "Open shutter for %s seconds" % exposure
-   ccs_sub.bb.sendSynchCommand("ProjectorShutter exposure",int(1000*exposure))
+   ccs_sub.bb.sendSynchCommand("ProjectorShutter exposure",Duration.ofMillis(int(1000*exposure)))
    ccs_sub.bb.sendSynchCommand(int(exposure)+1,"ProjectorShutter waitForClosed")
