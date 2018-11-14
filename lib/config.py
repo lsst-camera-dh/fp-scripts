@@ -13,11 +13,11 @@ def parseConfig(file):
   config.readfp(StringIO.StringIO("".join(slines))) 
   return config
 
-def execute(config, ccs_sub, extra_options):
+def execute(config, command_line_options):
   items = config.options("ACQUIRE")
   for item in items:
      options = dict(config.items(item.upper()))
-     options.update(extra_options)
+     options.update(command_line_options)
      options.update({'acqtype': item.upper()})
      method = getattr(acquire,'do_%s' % item)
-     result = method(ccs_sub, options)
+     result = method(options)
