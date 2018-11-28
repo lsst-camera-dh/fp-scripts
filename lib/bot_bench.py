@@ -3,6 +3,7 @@ from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
+import time
 
 bb = CCS.attachProxy("bot-bench")
 
@@ -21,8 +22,18 @@ def setColorFilter(filter):
    print "Setting Color filter "+filter
    bb.ColorFWheel().setNamedPosition(filter)
 
+# Open the flat field projector shutter
 def openShutter(exposure):
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
    bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure)))
-   bb.ProjectorShutter().waitForClosed()
+   ok = bb.ProjectorShutter().waitForClosed()
+   if not ok:
+      raise Exception("Shutter operation timed out")
+
+def openFe55Shutter(exposure):
+   sanityCheck()
+   print "Open Fe55 shutter for %s seconds" % exposure
+   bb.Fe55OpenShutters()
+   time.sleep(exposure)
+   bb.Fe55CloseShutters()
