@@ -15,4 +15,4 @@ ccs-script bot-data.py examples/aaron.cfg
 
 or if ccs-script is on your PATH
 
-./bot-data.py examples/aaron.cfg
+./bot-data.py examples/main.cfg
