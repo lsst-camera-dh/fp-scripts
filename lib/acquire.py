@@ -164,4 +164,28 @@ def do_ccob(options):
                symlink(options,imageName,fileList,'BIAS')
             imageName,fileList = fp.takeExposure(exposeCommand)
             symlink(options,imageName,fileList,'CCOB')
-  
+
+def do_xtalk(options):
+   print "xtalk called %s" % options
+   bcount = int(options.get('bcount','1'))
+   imcount = int(options.get('imcount', '1'))
+   exposures = options.get('xtalk').replace('\n','').split(',')
+   points = options.get('point').replace('\n', '').split(',')
+   xtalkSeqNumber = 0
+   for point in points:
+      (x,y) = [float(x) for x in point.split()]
+      print (x,y)
+      for exposure in exposures:
+         exposeCommand = lambda: bot_bench.openShutter(exposure)
+         
+         for b in range(bcount):
+            fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'XTALK', 'IMGTYPE': 'BIAS', 'TSEQNO': xtalkSeqNumber}
+            imageName,fileList = fp.takeBias()
+            symlink(fileList, options['symlink'], 'xtalk', 'bias', xtalkSeqNumber)
+
+         for i in range(imcount):
+            fitsHeaderData = {'EXPTIME': exposure, 'TESTTYPE': 'XTALK', 'IMGTYPE': 'XTALK', 'TSEQNO': xtalkSeqNumber}
+            imageName,fileList = fp.takeExposure(exposeCommand)
+            symlink(fileList, options['symlink'], 'xtalk', '%s_%s_%s' % (x, y, exposure), xtalkSeqNumber)
+
+      xtalkSeqNumber += 1
