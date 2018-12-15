@@ -1,5 +1,7 @@
 
 import fp
+#import pd
+from pd import PhotodiodeReadout
 import bot_bench
 import ccob
 import os
@@ -113,8 +115,17 @@ def do_flat(options):
           
        exposeCommand = lambda: bot_bench.openShutter(exposure)
        for pair in range(2):
+          # Create photodiode readout handler.
+          pd_readout = PhotodiodeReadout(exposure)
+
+          pd_readout.start_accumulation()
+
           fitsHeaderData = {'EXPTIME': exposure, 'TESTTYPE': 'FLAT', 'IMGTYPE': 'FLAT', 'TSEQNO': flatSeqNumber}
           imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
+
+          pd_readout.get_readings(fileList, flatSeqNumber, pair)
+
+
           symlink(fileList, options['symlink'], 'flat', '%s_%s_flat%d' % (wl,e_per_pixel,pair), flatSeqNumber)
           flatSeqNumber += 1
 
