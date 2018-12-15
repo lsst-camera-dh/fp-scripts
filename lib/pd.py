@@ -56,7 +56,7 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        cwd = "/tmp"
+        self.cwd = "/tmp"
 
         if exptime > 0.5:
             self.nplc = 1.
@@ -73,7 +73,7 @@ class PhotodiodeReadout(object):
         # (needs to be between 0.001 and 60 - add code to check)
         self.nplc = (exptime + buffertime)*60./self.nreads
         pd_result = None
-        start_time = None
+        self.start_time = None
 
     def start_accumulation(self):
         """
@@ -91,9 +91,9 @@ class PhotodiodeReadout(object):
 #                                                    self.nplc, True)
         pd_result = bbsub.asynchCommand("accumPDBuffer", self.nreads,
                                                     self.nplc)
-        start_time = time.time()
+        self.start_time = time.time()
         logger.info("Photodiode readout accumulation started at %f",
-                         start_time)
+                         self.start_time)
 
         running = False
         while not running:
@@ -103,7 +103,7 @@ class PhotodiodeReadout(object):
                 logger.info("PhotodiodeReadout.start_accumulation:")
                 logger.info(str(eobj))
             logger.info("Photodiode checking that accumulation started at %f",
-                         time.time() - start_time)
+                         time.time() - self.start_time)
             time.sleep(0.25)
 
     def write_readings(self, seqno, icount=1):
@@ -111,23 +111,23 @@ class PhotodiodeReadout(object):
         Output the accumulated photodiode readings to a text file.
         """
         # make sure Photodiode readout has had enough time to run
-        pd_filename = os.path.join(cwd,
+        pd_filename = os.path.join(self.cwd,
                                    "pd-values_%d-for-seq-%d-exp-%d.txt"
-                                   % (int(start_time), seqno, icount))
+                                   % (int(self.start_time), seqno, icount))
         logger.info("Photodiode about to be readout at %f",
-                         time.time() - start_time)
+                         time.time() - self.start_time)
 
-        result = bbsub.synchCommand(1000, "readPDBuffer", pd_filename)
+        result = bbsub.synchCommand(1000, "readPDbuffer", pd_filename)
         logger.info("Photodiode readout accumulation finished at %f, %s",
-                         time.time() - start_time, result.getResult())
+                         time.time() - self.start_time, result.getResult())
 
         return pd_filename
 
     def add_pd_time_history(self, fits_files, pd_filename):
         "Add the photodiode time history as an extension to the FITS files."
         for fits_file in fits_files:
-            full_path = glob.glob('%s/*/%s' % (cwd, fits_file))[0]
-#            command = "addBinaryTable %s %s AMP0.MEAS_TIMES AMP0_MEAS_TIMES AMP0_A_CURRENT %d" % (pd_filename, full_path, start_time)
+            full_path = glob.glob('%s/*/%s' % (self.cwd, fits_file))[0]
+#            command = "addBinaryTable %s %s AMP0.MEAS_TIMES AMP0_MEAS_TIMES AMP0_A_CURRENT %d" % (pd_filename, full_path, self.start_time)
 #            sub.ts8.synchCommand(200, command)
 #            logger.info("Photodiode readout added to fits file %s",
 #                             fits_file)

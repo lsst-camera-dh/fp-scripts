@@ -50,7 +50,7 @@ def do_fe55(options):
           bot_bench.openShutter(exposure) # Flat
           bot_bench.openFe55Shutter(fe55exposure) # Fe55
 
-       bot_bench.setColorFilter(filter)
+#       bot_bench.setColorFilter(filter)
 
        for f in range(fe55count):  
           for b in range(bcount):
@@ -95,25 +95,33 @@ def do_persistence(options):
    print "persistence called %s" % options
 
 def do_flat(options):
+   optics = False
    print "flat called %s" % options
    bcount = int(options.get('bcount','1'))
    wl = options.get('wl')
-   bot_bench.setColorFilter(wl)
+   if optics :
+       bot_bench.setColorFilter(wl)
    flats = options.get('flat').replace('\n','').split(',')
    flatSeqNumber = 0
    for flat in flats:
        e_per_pixel,filter = flat.split()
        exposure = float(e_per_pixel)/100.0	
        print "exp %s filter %s" % (exposure,filter)   
-       bot_bench.setNDFilter(filter)
+       if optics :
+           bot_bench.setNDFilter(filter)
        
        for i in range(bcount):
           fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'FLAT', 'IMGTYPE': 'BIAS', 'TSEQNO': flatSeqNumber}
           imageName,fileList = fp.takeBias(fitsHeaderData)
           symlink(fileList, options['symlink'], 'flat', 'bias', flatSeqNumber)
           flatSeqNumber += 1
-          
-       exposeCommand = lambda: bot_bench.openShutter(exposure)
+
+       if optics :
+           exposeCommand = lambda: bot_bench.openShutter(exposure)
+# the following is just for testing
+       else :
+           exposeCommand = lambda: time.sleep(exposure)
+
        for pair in range(2):
           # Create photodiode readout handler.
           pd_readout = PhotodiodeReadout(exposure)
@@ -123,7 +131,8 @@ def do_flat(options):
           fitsHeaderData = {'EXPTIME': exposure, 'TESTTYPE': 'FLAT', 'IMGTYPE': 'FLAT', 'TSEQNO': flatSeqNumber}
           imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
 
-          pd_readout.get_readings(fileList, flatSeqNumber, pair)
+#          pd_readout.get_readings(fileList, flatSeqNumber, pair)
+          pd_readout.write_readings(flatSeqNumber, pair)
 
 
           symlink(fileList, options['symlink'], 'flat', '%s_%s_flat%d' % (wl,e_per_pixel,pair), flatSeqNumber)
