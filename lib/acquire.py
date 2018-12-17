@@ -16,8 +16,8 @@ def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
       symname = "%s/%s_%s-%03d" % (symdir, acqType, imageType, testSeqNumber)
       if not os.path.exists(symdir): 
          os.makedirs(symdir)
-         os.symlink(fileList.getCommonParentDirectory().toString(), symname)
-         print "Symlinked from %s" % symname; 
+      os.symlink(fileList.getCommonParentDirectory().toString(), symname)
+      print "Symlinked from %s" % symname; 
    
 def computeExposureTime(ndFilter, wlFilter, e_per_pixel):
    # TODO: Use per-filter config file to compute exposure
@@ -61,10 +61,10 @@ def do_fe55(options):
             symlink(fileList, options['symlink'], 'fe55_flat', 'bias', fe55SeqNumber)
             fe55SeqNumber += 1
             
-            fitsHeaderData = {'ExposureTime': exposure, 'ExposureTime2': fe55exposure, 'TestType': 'FE55_FLAT', 'ImageType': 'FE55', 'TestSeqNum': fe55SeqNumber}
-            imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
-            symlink(fileList, options['symlink'], 'fe55_flat', '%s_flat_%s' % (filter,e_per_pixel) , fe55SeqNumber)
-            fe55SeqNumber += 1
+          fitsHeaderData = {'ExposureTime': exposure, 'ExposureTime2': fe55exposure, 'TestType': 'FE55_FLAT', 'ImageType': 'FE55', 'TestSeqNum': fe55SeqNumber}
+          imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
+          symlink(fileList, options['symlink'], 'fe55_flat', '%s_flat_%s' % (filter,e_per_pixel) , fe55SeqNumber)
+          fe55SeqNumber += 1
 
 
 def do_dark(options):
