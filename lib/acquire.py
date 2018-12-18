@@ -13,7 +13,7 @@ def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
       return
    print "Saved %d FITS files to %s" % (fileList.size(),fileList.getCommonParentDirectory())
    if symdir:
-      symname = "%s/%s_%s-%03d" % (symdir, acqType, imageType, testSeqNumber)
+      symname = "%s/%s_%s_%03d" % (symdir, acqType, imageType, testSeqNumber)
       if not os.path.exists(symdir): 
          os.makedirs(symdir)
       os.symlink(fileList.getCommonParentDirectory().toString(), symname)
