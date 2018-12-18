@@ -33,7 +33,7 @@ class PhotodiodeReadout(object):
     """
     Class to handle monitoring photodiode readout.
     """
-    def __init__(self,exposure, max_reads=2048):
+    def __init__(self,cwd, exposure, max_reads=2048):
         print(" **************************** ")
         print(" PD readout exposure time requested = ",exposure)
         exptime = 1.0 * exposure
@@ -56,7 +56,7 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        self.cwd = "/tmp"
+#        self.cwd = "/tmp"
 
         if exptime > 0.5:
             self.nplc = 1.
