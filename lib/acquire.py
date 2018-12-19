@@ -25,10 +25,13 @@ def computeExposureTime(ndFilter, wlFilter, e_per_pixel):
 
 def do_bias(options):
    print "bias called %s" % options
-   count = int(options.get('count','10'))
+   count = options.getInt('count',10)
+   run = options.getInt('run')
    biasSeqNumber = 0
    for i in range(count):
       fitsHeaderData = {'ExposureTime': 0, 'TestType': 'BIAS', 'ImageType': 'BIAS', 'TestSeqNum': biasSeqNumber}
+      if run:
+         fitsHeaderData.update({'RunNumber': run })
       imageName,fileList = fp.takeBias(fitsHeaderData)
       symlink(fileList, options['symlink'], 'bias', 'bias', biasSeqNumber)
       biasSeqNumber += 1
