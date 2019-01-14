@@ -27,9 +27,7 @@ def openShutter(exposure):
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
    bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure)))
-   ok = bb.ProjectorShutter().waitForClosed()
-   if not ok:
-      raise Exception("Shutter operation timed out")
+   bb.ProjectorShutter().waitForClosed()
 
 def openFe55Shutter(exposure):
    sanityCheck()
