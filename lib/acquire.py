@@ -13,7 +13,7 @@ def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
       return
    print "Saved %d FITS files to %s" % (fileList.size(),fileList.getCommonParentDirectory())
    if symdir:
-      symname = "%s/%s_%s-%03d" % (symdir, acqType, imageType, testSeqNumber)
+      symname = "%s/%s_%s_%03d" % (symdir, acqType, imageType, testSeqNumber)
       if not os.path.exists(symdir): 
          os.makedirs(symdir)
       os.symlink(fileList.getCommonParentDirectory().toString(), symname)
@@ -25,10 +25,13 @@ def computeExposureTime(ndFilter, wlFilter, e_per_pixel):
 
 def do_bias(options):
    print "bias called %s" % options
-   count = int(options.get('count','10'))
+   count = options.getInt('count',10)
+   run = options.getInt('run')
    biasSeqNumber = 0
    for i in range(count):
       fitsHeaderData = {'ExposureTime': 0, 'TestType': 'BIAS', 'ImageType': 'BIAS', 'TestSeqNum': biasSeqNumber}
+      if run:
+         fitsHeaderData.update({'RunNumber': run })
       imageName,fileList = fp.takeBias(fitsHeaderData)
       symlink(fileList, options['symlink'], 'bias', 'bias', biasSeqNumber)
       biasSeqNumber += 1
@@ -61,10 +64,10 @@ def do_fe55(options):
             symlink(fileList, options['symlink'], 'fe55_flat', 'bias', fe55SeqNumber)
             fe55SeqNumber += 1
             
-            fitsHeaderData = {'ExposureTime': exposure, 'ExposureTime2': fe55exposure, 'TestType': 'FE55_FLAT', 'ImageType': 'FE55', 'TestSeqNum': fe55SeqNumber}
-            imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
-            symlink(fileList, options['symlink'], 'fe55_flat', '%s_flat_%s' % (filter,e_per_pixel) , fe55SeqNumber)
-            fe55SeqNumber += 1
+          fitsHeaderData = {'ExposureTime': exposure, 'ExposureTime2': fe55exposure, 'TestType': 'FE55_FLAT', 'ImageType': 'FE55', 'TestSeqNum': fe55SeqNumber}
+          imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
+          symlink(fileList, options['symlink'], 'fe55_flat', '%s_flat_%s' % (filter,e_per_pixel) , fe55SeqNumber)
+          fe55SeqNumber += 1
 
 
 def do_dark(options):
