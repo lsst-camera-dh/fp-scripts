@@ -16,8 +16,8 @@ def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
       symname = "%s/%s_%s-%03d" % (symdir, acqType, imageType, testSeqNumber)
       if not os.path.exists(symdir): 
          os.makedirs(symdir)
-         os.symlink(fileList.getCommonParentDirectory().toString(), symname)
-         print "Symlinked from %s" % symname; 
+      os.symlink(fileList.getCommonParentDirectory().toString(), symname)
+      print "Symlinked from %s" % symname; 
    
 def computeExposureTime(ndFilter, wlFilter, e_per_pixel):
    # TODO: Use per-filter config file to compute exposure
