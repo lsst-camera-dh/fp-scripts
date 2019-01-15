@@ -32,6 +32,6 @@ def openShutter(exposure):
 def openFe55Shutter(exposure):
    sanityCheck()
    print "Open Fe55 shutter for %s seconds" % exposure
-   bb.Fe55OpenShutters()
+   bb.fe55OpenShutters()
    time.sleep(exposure)
-   bb.Fe55CloseShutters()
+   bb.fe55CloseShutters()
