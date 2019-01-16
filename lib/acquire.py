@@ -156,7 +156,8 @@ def do_lambda(options):
    for lamb in lambdas:
        wlFilter,e_per_pixel,ndFilter = lamb.split()
        exposure = computeExposureTime(ndFilter, wlFilter, e_per_pixel)		
-       print "exp %s wlFilter %s ndFilter %s" % (exposure,wlFilter,ndFilter)   
+       bot_bench.setColorFilter(wlFilter)
+       bot_bench.setNDFilter(ndFilter)
        
        for i in range(bcount):
           fitsHeaderData = {'ExposureTime': 0, 'TestType': 'LAMBDA', 'ImageType': 'BIAS', 'TestSeqNum': lambdaSeqNumber}
