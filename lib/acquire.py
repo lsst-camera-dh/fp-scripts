@@ -3,6 +3,7 @@ import bot_bench
 import ccob
 import os
 import time
+from pd import PhotodiodeReadout
 
 def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
    ''' Create symlinks for created FITS files, based on the specification here:
