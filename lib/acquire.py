@@ -127,14 +127,14 @@ def do_flat(options):
 
        for pair in range(2):
           # Create photodiode readout handler.
-          pd_readout = PhotodiodeReadout(fileList.getCommonParentDirectory(), exposure)
+          pd_readout = PhotodiodeReadout(exposure)
 
           pd_readout.start_accumulation()
 
           fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'FLAT', 'ImageType': 'FLAT', 'TestSeqNum': flatSeqNumber}
           imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
 
-          pd_readout.write_readings(flatSeqNumber, pair)
+          pd_readout.write_readings(fileList.getCommonParentDirectory().toString(), flatSeqNumber, pair)
 
           symlink(fileList, options['symlink'], 'flat', '%s_%s_flat%d' % (wl,e_per_pixel,pair), flatSeqNumber)
           flatSeqNumber += 1
