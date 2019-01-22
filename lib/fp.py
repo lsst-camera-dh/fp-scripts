@@ -33,6 +33,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None):
    sanityCheck()
    clear()
    print "Setting FITS headers %s" % fitsHeaderData
+   fp.setPrimaryHeaderKeyword(fitsHeaderData)
    imageName = fp.startIntegration()
    print "Image name: %s" % imageName
    if exposeCommand: 
