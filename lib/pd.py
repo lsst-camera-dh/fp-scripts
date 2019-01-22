@@ -33,7 +33,7 @@ class PhotodiodeReadout(object):
     """
     Class to handle monitoring photodiode readout.
     """
-    def __init__(self,exposure, max_reads=2048):
+    def __init__(self, exposure, max_reads=2048):
         print(" **************************** ")
         print(" PD readout exposure time requested = ",exposure)
         exptime = 1.0 * exposure
@@ -47,16 +47,13 @@ class PhotodiodeReadout(object):
         max_reads : int, optional
             Maximum number of reads of monitoring photodiode.  Default: 2048.
         """
-#        sub = eo_acq_object.sub
-#        md = eo_acq_object.md
-#        logger = eo_acq_object.logger
-#        _exptime = exptime
+
         buffertime = 2.0
+
 
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        self.cwd = "/tmp"
 
         if exptime > 0.5:
             self.nplc = 1.
@@ -102,31 +99,42 @@ class PhotodiodeReadout(object):
             except StandardError as eobj:
                 logger.info("PhotodiodeReadout.start_accumulation:")
                 logger.info(str(eobj))
+            except :
+                logger.info("isPDAccumInProgress command rejected")
+
             logger.info("Photodiode checking that accumulation started at %f",
                          time.time() - self.start_time)
             time.sleep(0.25)
 
-    def write_readings(self, seqno, icount=1):
+    def write_readings(self, destination_spec, seqno, icount=1):
         """
         Output the accumulated photodiode readings to a text file.
         """
+
+        self.destination = destination_spec
+        logger.info("PD destination directory = ",self.destination)
+
         # make sure Photodiode readout has had enough time to run
-        pd_filename = os.path.join(self.cwd,
-                                   "pd-values_%d-for-seq-%d-exp-%d.txt"
-                                   % (int(self.start_time), seqno, icount))
+        pd_filename = os.path.join(self.destination,"Photodiode_Readings.txt")
+
+        print("The ultimate pd filename is ",pd_filename)
+
         logger.info("Photodiode about to be readout at %f",
                          time.time() - self.start_time)
 
-        result = bbsub.synchCommand(1000, "readPDbuffer", pd_filename)
-        logger.info("Photodiode readout accumulation finished at %f, %s",
-                         time.time() - self.start_time, result.getResult())
+        result = bbsub.synchCommand(1000, "readPDbuffer", pd_filename).getResult()
+        logger.info("Photodiode readout accumulation finished at %f",
+                         time.time() - self.start_time)
+#        logger.info("Photodiode readout accumulation finished at %f, %s",
+#                         time.time() - self.start_time, result.getResult())
 
         return pd_filename
 
+# Not currently used ... to be removed once its inutility is confirmed
     def add_pd_time_history(self, fits_files, pd_filename):
         "Add the photodiode time history as an extension to the FITS files."
         for fits_file in fits_files:
-            full_path = glob.glob('%s/*/%s' % (self.cwd, fits_file))[0]
+            full_path = glob.glob('%s/*/%s' % (self.destination, fits_file))[0]
 #            command = "addBinaryTable %s %s AMP0.MEAS_TIMES AMP0_MEAS_TIMES AMP0_A_CURRENT %d" % (pd_filename, full_path, self.start_time)
 #            sub.ts8.synchCommand(200, command)
 #            logger.info("Photodiode readout added to fits file %s",

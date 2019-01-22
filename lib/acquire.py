@@ -1,32 +1,35 @@
-
 import fp
-#import pd
-from pd import PhotodiodeReadout
 import bot_bench
 import ccob
 import os
 import time
+from pd import PhotodiodeReadout
 
 def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
-      # Create symlinks for created FITS files, based on the specification here:
-      #
-      # https://confluence.slac.stanford.edu/x/B244Dg 
-      if not fileList: # Indicates --nofits option was used
-         return
-      print "Saved %d FITS files to %s" % (fileList.size(),fileList.getCommonParentDirectory())
-      if symdir:
-         symname = "%s/%s_%s-%03d" % (symdir, acqType, imageType, testSeqNumber)
-         if not os.path.exists(symdir): 
-            os.makedirs(symdir);
-         os.symlink(fileList.getCommonParentDirectory().toString(), symname)
-         print "Symlinked from %s" % symname; 
+   ''' Create symlinks for created FITS files, based on the specification here:
+
+       https://confluence.slac.stanford.edu/x/B244Dg
+   '''
+   if not fileList: # Indicates --nofits option was used
+      return
+   print "Saved %d FITS files to %s" % (fileList.size(),fileList.getCommonParentDirectory())
+   if symdir:
+      symname = "%s/%s_%s-%03d" % (symdir, acqType, imageType, testSeqNumber)
+      if not os.path.exists(symdir): 
+         os.makedirs(symdir)
+      os.symlink(fileList.getCommonParentDirectory().toString(), symname)
+      print "Symlinked from %s" % symname; 
    
+def computeExposureTime(ndFilter, wlFilter, e_per_pixel):
+   # TODO: Use per-filter config file to compute exposure
+   return float(e_per_pixel)/100.0
+
 def do_bias(options):
    print "bias called %s" % options
    count = int(options.get('count','10'))
    biasSeqNumber = 0
    for i in range(count):
-      fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'BIAS', 'IMGTYPE': 'BIAS', 'TSEQNO': biasSeqNumber}
+      fitsHeaderData = {'ExposureTime': 0, 'TestType': 'BIAS', 'ImageType': 'BIAS', 'TestSeqNum': biasSeqNumber}
       imageName,fileList = fp.takeBias(fitsHeaderData)
       symlink(fileList, options['symlink'], 'bias', 'bias', biasSeqNumber)
       biasSeqNumber += 1
@@ -44,22 +47,22 @@ def do_fe55(options):
    
    for flat in flats:
        filter,e_per_pixel = flat.split()
-       exposure = float(e_per_pixel)/100.0	
+       exposure = computeExposureTime(None, filter, e_per_pixel)	
        print "exp %s filter %s" % (exposure,filter)   
        def exposeCommand(): 
           bot_bench.openShutter(exposure) # Flat
           bot_bench.openFe55Shutter(fe55exposure) # Fe55
 
-#       bot_bench.setColorFilter(filter)
+       bot_bench.setColorFilter(filter)
 
        for f in range(fe55count):  
           for b in range(bcount):
-            fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'FE55_FLAT', 'IMGTYPE': 'BIAS', 'TSEQNO': fe55SeqNumber}
+            fitsHeaderData = {'ExposureTime': 0, 'TestType': 'FE55_FLAT', 'ImageType': 'BIAS', 'TestSeqNum': fe55SeqNumber}
             imageName,fileList = fp.takeBias(fitsHeaderData)
             symlink(fileList, options['symlink'], 'fe55_flat', 'bias', fe55SeqNumber)
             fe55SeqNumber += 1
             
-            fitsHeaderData = {'EXPTIME': exposure, 'EXPTIME2': fe55exposure, 'TESTTYPE': 'FE55_FLAT', 'IMGTYPE': 'FE55', 'TSEQNO': fe55SeqNumber}
+            fitsHeaderData = {'ExposureTime': exposure, 'ExposureTime2': fe55exposure, 'TestType': 'FE55_FLAT', 'ImageType': 'FE55', 'TestSeqNum': fe55SeqNumber}
             imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
             symlink(fileList, options['symlink'], 'fe55_flat', '%s_flat_%s' % (filter,e_per_pixel) , fe55SeqNumber)
             fe55SeqNumber += 1
@@ -80,15 +83,15 @@ def do_dark(options):
 
       for d in range(count):
          for b in range(bcount):
-            fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'DARK', 'IMGTYPE': 'BIAS', 'TSEQNO': darkSeqNumber}
+            fitsHeaderData = {'ExposureTime': 0, 'TestType': 'DARK', 'ImageType': 'BIAS', 'TestSeqNum': darkSeqNumber}
             imageName,fileList = fp.takeBias(fitsHeaderData)
             symlink(fileList, options['symlink'], 'dark', 'bias', darkSeqNumber)
             darkSeqNumber += 1
             
-            fitsHeaderData = {'EXPTIME': integration, 'TESTTYPE': 'DARK', 'IMGTYPE': 'DARK', 'TSEQNO': darkSeqNumber}
-            imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
-            symlink(fileList, options['symlink'], 'dark', 'dark', darkSeqNumber)
-            darkSeqNumber += 1
+         fitsHeaderData = {'ExposureTime': integration, 'TestType': 'DARK', 'ImageType': 'DARK', 'TestSeqNum': darkSeqNumber}
+         imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
+         symlink(fileList, options['symlink'], 'dark', 'dark', darkSeqNumber)
+         darkSeqNumber += 1
 
 
 def do_persistence(options):
@@ -105,17 +108,17 @@ def do_flat(options):
    flatSeqNumber = 0
    for flat in flats:
        e_per_pixel,filter = flat.split()
-       exposure = float(e_per_pixel)/100.0	
+       exposure = computeExposureTime(filter, wl, e_per_pixel)	
        print "exp %s filter %s" % (exposure,filter)   
        if optics :
            bot_bench.setNDFilter(filter)
        
        for i in range(bcount):
-          fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'FLAT', 'IMGTYPE': 'BIAS', 'TSEQNO': flatSeqNumber}
+          fitsHeaderData = {'ExposureTime': 0, 'TestType': 'FLAT', 'ImageType': 'BIAS', 'TestSeqNum': flatSeqNumber}
           imageName,fileList = fp.takeBias(fitsHeaderData)
           symlink(fileList, options['symlink'], 'flat', 'bias', flatSeqNumber)
           flatSeqNumber += 1
-
+          
        if optics :
            exposeCommand = lambda: bot_bench.openShutter(exposure)
 # the following is just for testing
@@ -128,18 +131,35 @@ def do_flat(options):
 
           pd_readout.start_accumulation()
 
-          fitsHeaderData = {'EXPTIME': exposure, 'TESTTYPE': 'FLAT', 'IMGTYPE': 'FLAT', 'TSEQNO': flatSeqNumber}
+          fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'FLAT', 'ImageType': 'FLAT', 'TestSeqNum': flatSeqNumber}
           imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
 
-#          pd_readout.get_readings(fileList, flatSeqNumber, pair)
-          pd_readout.write_readings(flatSeqNumber, pair)
-
+          pd_readout.write_readings(fileList.getCommonParentDirectory().toString(), flatSeqNumber, pair)
 
           symlink(fileList, options['symlink'], 'flat', '%s_%s_flat%d' % (wl,e_per_pixel,pair), flatSeqNumber)
           flatSeqNumber += 1
 
+def takeFlat(bcount,ndFilter,wlFilter,e_per_pixel,testType,imgType, counter):
+   for i in range(bcount):
+      fitsHeaderData = {'ExposureTime': 0, 'TestType': testType, 'ImageType': 'BIAS', 'TestSeqNum': counter}
+      imageName,fileList = fp.takeBias(fitsHeaderData)
+      symlink(fileList, options['symlink'], testType.lower(), 'bias', counter)
+      counter += 1
+          
+   exposeCommand = lambda: bot_bench.openShutter(exposure)
+   fitsHeaderData = {'ExposureTime': exposure, 'TestType': testType, 'ImageType': 'FLAT', 'TestSeqNum': counter}
+   imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
+   symlink(fileList, options['symlink'], testType.lower(), imgType, counter)
+   counter += 1   
+
 def do_sflat(options):
    print "superflat called %s" % options
+   bcount = int(options.get('bcount','1'))
+   sflats = options.get('sflat').replace('\n','').split(',')
+   seqno = Counter()
+   for sflat in sflats:
+       wlFilter,e_per_pixel,count,ndFilter = sflat.split()     
+       takeFlat(bcount,ndFilter,wlFilter,e_per_pixel,'SFLAT','flat_%s_%s' % (wlFilter,e_per_pixel), seqno)
 
 def do_lambda(options):
    print "lambda called %s" % options
@@ -149,17 +169,17 @@ def do_lambda(options):
    lambdaSeqNumber = 0
    for lamb in lambdas:
        wlFilter,e_per_pixel,ndFilter = lamb.split()
-       exposure = float(e_per_pixel)/100.0	
+       exposure = computeExposureTime(ndFilter, wlFilter, e_per_pixel)		
        print "exp %s wlFilter %s ndFilter %s" % (exposure,wlFilter,ndFilter)   
        
        for i in range(bcount):
-          fitsHeaderData = {'EXPTIME': 0, 'TESTTYPE': 'LAMBDA', 'IMGTYPE': 'BIAS', 'TSEQNO': lambdaSeqNumber}
+          fitsHeaderData = {'ExposureTime': 0, 'TestType': 'LAMBDA', 'ImageType': 'BIAS', 'TestSeqNum': lambdaSeqNumber}
           imageName,fileList = fp.takeBias(fitsHeaderData)
           symlink(fileList, options['symlink'], 'lambda', 'bias', lambdaSeqNumber)
           lambdaSeqNumber += 1
           
        exposeCommand = lambda: bot_bench.openShutter(exposure)
-       fitsHeaderData = {'EXPTIME': exposure, 'TESTTYPE': 'LAMBDA', 'IMGTYPE': 'FLAT', 'TSEQNO': lambdaSeqNumber}
+       fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'LAMBDA', 'ImageType': 'FLAT', 'TestSeqNum': lambdaSeqNumber}
        imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
        symlink(fileList, options['symlink'], 'lambda', 'flat_%s_%s' % (wlFilter,e_per_pixel), lambdaSeqNumber)
        lambdaSeqNumber += 1
@@ -184,4 +204,3 @@ def do_ccob(options):
                symlink(options,imageName,fileList,'BIAS')
             imageName,fileList = fp.takeExposure(exposeCommand)
             symlink(options,imageName,fileList,'CCOB')
-  
