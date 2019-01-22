@@ -3,6 +3,7 @@ from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
+import time
 
 ccob = CCS.attachProxy("ccob-subsystem")
 driver = ccob.ccobDriver()
@@ -23,3 +24,9 @@ def fireLED(led="red", current=0.009, seconds=0.05):
    driver.setLedCurrent(current)
    # Does this wait for the LED? (Apparently not)
    driver.startExposure()
+   time.sleep(seconds+0.1) # hopefully that is long enough?
+   after = driver.getAdcValues().getPhotodiodeCurrent()
+   return after
+
+
+

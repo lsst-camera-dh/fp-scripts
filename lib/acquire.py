@@ -1,6 +1,7 @@
 import fp
 import bot_bench
 import ccob
+import bot
 import os
 import time
 
@@ -175,11 +176,15 @@ def do_ccob(options):
    print "ccob called %s" % options
    bcount = int(options.get('bcount','1'))
    imcount = int(options.get('imcount','1'))
+   xoffset= float(options.get('xoffset'))
+   yoffset= float(options.get('yoffset'))
    exposures = options.get('expose').replace('\n','').split(',')
    points = options.get('point').replace('\n','').split(',')
+   bot.setLampOffset(xoffset,yoffset)
+   seqNumber = 0
    for point in points:
       (x,y) = [float(x) for x in point.split()]
-      print (x,y)
+      bot.moveTo(x,y)
       for exposure in exposures:
          (led,current,duration) = exposure.split()
          current = float(current)
@@ -187,7 +192,12 @@ def do_ccob(options):
          exposeCommand = lambda: ccob.fireLED(led,current,duration)
          for i in range(imcount):
             for b in range(bcount):
-               imageName,fileList = fp.takeBias()
-               symlink(options,imageName,fileList,'BIAS')
-            imageName,fileList = fp.takeExposure(exposeCommand)
-            symlink(options,imageName,fileList,'CCOB')
+               fitsHeaderData = {'ExposureTime': 0, 'TestType': 'CCOB', 'ImageType': 'BIAS', 'TestSeqNum': seqNumber}
+               imageName,fileList = fp.takeBias(fitsHeaderData)
+               symlink(fileList, options['symlink'], 'ccob', 'bias', seqNumber)
+               seqNumber+=1
+
+            fitsHeaderData = {'ExposureTime': duration, 'TestType': 'CCOB', 'ImageType': 'CCOB', 'TestSeqNum': seqNumber}
+            imageName,fileList = fp.takeExposure(exposeCommand,fitsHeaderData)
+            symlink(fileList, options['symlink'], 'ccob', '%s_%s_%s' % (led,x,y), seqNumber)
+            seqNumber+=1
