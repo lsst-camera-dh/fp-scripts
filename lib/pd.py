@@ -112,7 +112,7 @@ class PhotodiodeReadout(object):
         """
 
         self.destination = destination_spec
-        logger.info("PD destination directory = ",self.destination)
+        logger.info("PD destination directory = %s",self.destination)
 
         # make sure Photodiode readout has had enough time to run
         pd_filename = os.path.join(self.destination,"Photodiode_Readings.txt")

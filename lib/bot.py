@@ -6,7 +6,10 @@ from java.time import Duration
 from ccs import proxies
 import time
 
-bot = CCS.attachProxy("bot-motorplatform")
+try:
+  bot = CCS.attachProxy("bot-motorplatform")
+except:
+  print "BOT subsystem not available, attempting to continue"
 
 def sanityCheck():
    alerts = bot.getRaisedAlertSummary()
