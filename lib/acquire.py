@@ -4,6 +4,7 @@ import ccob
 import bot
 import os
 import time
+from pd import PhotodiodeReadout
 
 def symlink(fileList, symdir, acqType, imageType, testSeqNumber):
    ''' Create symlinks for created FITS files, based on the specification here:
@@ -70,7 +71,6 @@ def do_fe55(options):
           symlink(fileList, options['symlink'], 'fe55_flat', '%s_flat_%s' % (filter,e_per_pixel) , fe55SeqNumber)
           fe55SeqNumber += 1
 
-
 def do_dark(options):
    print "dark called %s" % options
    # of biases per dark image
@@ -101,17 +101,20 @@ def do_persistence(options):
    print "persistence called %s" % options
 
 def do_flat(options):
+   optics = False
    print "flat called %s" % options
    bcount = int(options.get('bcount','1'))
    wl = options.get('wl')
-   bot_bench.setColorFilter(wl)
+   if optics :
+       bot_bench.setColorFilter(wl)
    flats = options.get('flat').replace('\n','').split(',')
    flatSeqNumber = 0
    for flat in flats:
        e_per_pixel,filter = flat.split()
        exposure = computeExposureTime(filter, wl, e_per_pixel)	
        print "exp %s filter %s" % (exposure,filter)   
-       bot_bench.setNDFilter(filter)
+       if optics :
+           bot_bench.setNDFilter(filter)
        
        for i in range(bcount):
           fitsHeaderData = {'ExposureTime': 0, 'TestType': 'FLAT', 'ImageType': 'BIAS', 'TestSeqNum': flatSeqNumber}
@@ -119,10 +122,23 @@ def do_flat(options):
           symlink(fileList, options['symlink'], 'flat', 'bias', flatSeqNumber)
           flatSeqNumber += 1
           
-       exposeCommand = lambda: bot_bench.openShutter(exposure)
+       if optics :
+           exposeCommand = lambda: bot_bench.openShutter(exposure)
+# the following is just for testing
+       else :
+           exposeCommand = lambda: time.sleep(exposure)
+
        for pair in range(2):
+          # Create photodiode readout handler.
+          pd_readout = PhotodiodeReadout(exposure)
+
+          pd_readout.start_accumulation()
+
           fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'FLAT', 'ImageType': 'FLAT', 'TestSeqNum': flatSeqNumber}
           imageName,fileList = fp.takeExposure(exposeCommand, fitsHeaderData)
+
+          pd_readout.write_readings(fileList.getCommonParentDirectory().toString(), flatSeqNumber, pair)
+
           symlink(fileList, options['symlink'], 'flat', '%s_%s_flat%d' % (wl,e_per_pixel,pair), flatSeqNumber)
           flatSeqNumber += 1
 
@@ -201,3 +217,25 @@ def do_ccob(options):
             imageName,fileList = fp.takeExposure(exposeCommand,fitsHeaderData)
             symlink(fileList, options['symlink'], 'ccob', '%s_%s_%s' % (led,x,y), seqNumber)
             seqNumber+=1
+
+def do_xtalk(options):
+   print "xtalk called %s" % options
+   bcount = int(options.get('bcount', '1'))
+   imcount = int(options.get('imcount', '1'))
+   exposures = options.get('xtalk').replace('\n','').split(',')
+   points = options.get('point').replace('\n', '').split(',')
+   xtalkSeqNumber = 0
+   for point in points:
+      (x,y) = [float(x) for x in point.split()]
+      print (x,y)
+      for exposure in exposures:
+
+         for b in range(bcount):
+            imageName, fileList = fp.takeBias()
+            symlink(options, imageName, fileList, 'BIAS')
+
+         exposeCommand = lambda: bot_bench.openShutter(exposure)
+         for i in range(imcount):
+            imageName,fileList = fp.takeExposure(exposeCommand)
+            symlink(fileList, options['symlink'], 'xtalk', '%s_%s_%s' % (x, y, exposure), xtalkSeqNumber)
+      xtalkSeqNumber += 1
