@@ -1,6 +1,7 @@
 import fp
 import bot_bench
 import ccob
+import bot
 import os
 import time
 from pd import PhotodiodeReadout
@@ -209,12 +210,15 @@ def do_xtalk(options):
    print "xtalk called %s" % options
    bcount = int(options.get('bcount', '1'))
    imcount = int(options.get('imcount', '1'))
+   xoffset = float(options.get('xoffset'))
+   yoffset = float(option.get('yoffset'))
    exposures = options.get('xtalk').replace('\n','').split(',')
    points = options.get('point').replace('\n', '').split(',')
+   bot.setLampOffset(xoffset, yoffset)
    xtalkSeqNumber = 0
    for point in points:
       (x,y) = [float(x) for x in point.split()]
-      print (x,y)
+      bot.moveTo(x,y)
       for exposure in exposures:
 
          for b in range(bcount):
