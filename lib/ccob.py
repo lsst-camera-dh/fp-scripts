@@ -5,13 +5,14 @@ from java.time import Duration
 from ccs import proxies
 import time
 
-ccob = CCS.attachProxy("ccob-subsystem")
+ccob = CCS.attachProxy("ccob")
 driver = ccob.ccobDriver()
 
 def sanityCheck():
-   alerts = ccob.getRaisedAlertSummary()
-   if alerts.alertState!=AlertState.NOMINAL:
-      print "WARNING: CCOB subsystem is in alarm state %s" % alerts.alertState 
+   state = ccob.getState()
+   alert = state.getState(AlertState)
+   if alert!=AlertState.NOMINAL:
+      print "WARNING: CCOB subsystem is in alert state %s" % alert
 
 def fireLED(led="red", current=0.009, seconds=0.05):
    sanityCheck()

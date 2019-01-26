@@ -8,9 +8,10 @@ import time
 bb = CCS.attachProxy("bot-bench")
 
 def sanityCheck():
-   alerts = bb.getRaisedAlertSummary()
-   if alerts.alertState!=AlertState.NOMINAL:
-      print "WARNING: bot-bench subsystem is in alarm state %s" % alerts.alertState 
+   state = bb.getState()
+   alert = state.getState(AlertState)
+   if alert!=AlertState.NOMINAL:
+      print "WARNING: bot_bench subsystem is in alert state %s" % alert
 
 def setNDFilter(filter):
    sanityCheck()

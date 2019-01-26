@@ -5,7 +5,7 @@ from ccs import aliases
 from ccs import proxies
 
 # Temporary work around for problems with CCS responsiveness
-CCS.setDefaultTimeout(30)
+#CCS.setDefaultTimeout(30)
 
 # Parse command line options
 

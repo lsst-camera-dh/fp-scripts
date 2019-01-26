@@ -12,9 +12,10 @@ except:
   print "BOT subsystem not available, attempting to continue"
 
 def sanityCheck():
-   alerts = bot.getRaisedAlertSummary()
-   if alerts.alertState!=AlertState.NOMINAL:
-      print "WARNING: bot-motorplatform subsystem is in alarm state %s" % alerts.alertState 
+   state = bot.getState()
+   alert = state.getState(AlertState)
+   if alert!=AlertState.NOMINAL:
+      print "WARNING: bot-motorplatform subsystem is in alert state %s" % alert
 
 def setLampOffset(x=0, y=0):
    sanityCheck()
