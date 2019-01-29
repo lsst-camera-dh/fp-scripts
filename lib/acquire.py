@@ -223,8 +223,8 @@ def do_xtalk(options):
    bcount = int(options.get('bcount', '1'))
    imcount = int(options.get('imcount', '1'))
    xoffset = float(options.get('xoffset'))
-   yoffset = float(option.get('yoffset'))
-   exposures = options.get('xtalk').replace('\n','').split(',')
+   yoffset = float(options.get('yoffset'))
+   exposures = options.get('expose').replace('\n','').split(',')
    points = options.get('point').replace('\n', '').split(',')
    bot.setLampOffset(xoffset, yoffset)
    xtalkSeqNumber = 0
@@ -232,13 +232,16 @@ def do_xtalk(options):
       (x,y) = [float(x) for x in point.split()]
       bot.moveTo(x,y)
       for exposure in exposures:
+         exposure = float(exposure)
 
          for b in range(bcount):
-            imageName, fileList = fp.takeBias()
-            symlink(options, imageName, fileList, 'BIAS')
+            fitsHeaderData = {'ExposureTime': 0, 'TestType': 'XTALK', 'ImageType': 'BIAS', 'TestSeqNum': xtalkSeqNumber}
+            imageName, fileList = fp.takeBias(fitsHeaderData)
+            symlink(fileList,options['symlink'], 'XTALK', 'BIAS',xtalkSeqNumber)
 
          exposeCommand = lambda: bot_bench.openShutter(exposure)
          for i in range(imcount):
-            imageName,fileList = fp.takeExposure(exposeCommand)
-            symlink(fileList, options['symlink'], 'xtalk', '%s_%s_%s' % (x, y, exposure), xtalkSeqNumber)
+            fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'XTALK', 'ImageType': "%03.1f_%03.1f_%03.1f" % (x,y,exposure), 'TestSeqNum': xtalkSeqNumber}
+            imageName,fileList = fp.takeExposure(exposeCommand,fitsHeaderData)
+            symlink(fileList, options['symlink'], 'XTALK', "%03.1f_%03.1f_%03.1f" % (x,y,exposure), xtalkSeqNumber)
       xtalkSeqNumber += 1
