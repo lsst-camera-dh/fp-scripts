@@ -3,6 +3,7 @@ from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
+import bot_bench
 
 fp = CCS.attachProxy("focal-plane")
 autoSave = True
@@ -44,4 +45,26 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None):
    else:
      fp.waitForImages(imageTimeout)
      return (imageName, None)    
+
+def takeCombinedExposure(exposeCommand=None, fitsHeaderData=None, secondExposeCommand=None):
+   sanityCheck()
+   clear()
+   print "Setting FITS headers %s" % fitsHeaderData
+   fp.setPrimaryHeaderKeyword(fitsHeaderData)
+   imageName = fp.startIntegration()
+   print "Image name: %s" % imageName
+   if exposeCommand:
+      exposeCommand()
+   if secondExposeCommand:
+      bot_bench.setSpotFilter('open') # change to actual name for an open spot
+      secondExposeCommand()
+   fp.endIntegration()
+   if autoSave:
+     return (imageName, fp.waitForFitsFiles(imageTimeout))
+   else:
+     fp.waitForImages(imageTimeout)
+     return (imageName, None)   
+
+      
+   
 

@@ -259,7 +259,41 @@ def do_spot(options):
 
          exposeCommand = lambda: bot_bench.openShutter(exposure)
          for i in range(imcount):
-            fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'SPOT', 'ImageType': "%03.1f_%03.1f__%s_%03.1f" % (x,y,mask,exposure), 'TestSeqNum': spotSeqNumber}
+            fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'SPOT', 'ImageType': "%03.1f_%03.1f_%s_%03.1f" % (x,y,mask,exposure), 'TestSeqNum': spotSeqNumber}
             imageName,fileList = fp.takeExposure(exposeCommand,fitsHeaderData)
             symlink(fileList, options['symlink'], 'SPOT', "%03.1f_%03.1f_%s_%03.1f" % (x,y,mask,exposure), spotSeqNumber)
          spotSeqNumber += 1
+
+def do_spot_flat(options):
+   print "spot called %s" % options
+   bcount = int(options.get('bcount', '1'))
+   imcount = int(options.get('imcount', '1'))
+   xoffset = float(options.get('xoffset'))
+   yoffset = float(options.get('yoffset'))
+   mask = options.get('mask')
+   exposures = options.get('expose').replace('\n','').split(',')
+   points = options.get('point').replace('\n', '').split(',')
+   bot.setLampOffset(xoffset, yoffset)
+   seqNumber = 0 
+   for point in points:
+      (x,y) = [float(x) for x in point.split()]
+      bot.moveTo(x,y)
+      for exposure in exposures:
+         (exposure_1, exposure_2) = exposure.split()
+         exposure_1 = float(exposure_1)
+         exposure_2 = float(exposure_2)
+
+         for b in range(bcount):
+            fitsHeaderData = {'ExposureTime': 0, 'TestType': 'SPOT_FLAT', 'ImageType': 'BIAS', 'TestSeqNum': seqNumber}
+            imageName, fileList = fp.takeBias(fitsHeaderData)
+            symlink(fileList,options['symlink'], 'SPOT', 'BIAS',seqNumber)
+
+         bot_bench.setSpotFilter(mask)
+         exposeCommand = lambda: bot_bench.openShutter(exposure_1)
+         secondExposeCommand = lambda: bot_bench.openShutter(exposure_2)
+         for i in range(imcount):
+            fitsHeaderData = {'ExposureTime': exposure_1, 'TestType': 'SPOT_FLAT', 
+                              'ImageType': "%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f" % (x,y,mask,exposure_1, exposure_2), 'TestSeqNum': seqNumber}
+            imageName,fileList = fp.takeMixedExposure(exposeCommand,fitsHeaderData, secondExposeCommand)
+            symlink(fileList, options['symlink'], 'SPOT_FLAT', "%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f" % (x,y,mask,exposure_1, exposure_2), seqNumber)
+         seqNumber += 1
