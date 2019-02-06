@@ -10,7 +10,7 @@ from pd import PhotodiodeReadout
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
     def __init__(self, options, test_type, image_type):
-        self.run = options.getInt('run')
+        self.run = options['run']
         self.symlink = options['symlink']
         self.test_type = test_type
         self.image_type = image_type
@@ -113,7 +113,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         pd_readout = PhotodiodeReadout(exposure)
         pd_readout.start_accumulation()
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
-        # TODO: Why does this need the last two arguments?
+        # TODO: Why does this need the last argument - in fact it is not used?
         pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
