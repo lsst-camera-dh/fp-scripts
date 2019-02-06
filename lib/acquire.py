@@ -234,66 +234,45 @@ def do_xtalk(options):
             symlink(fileList, options['symlink'], 'XTALK', "%03.1f_%03.1f_%03.1f" % (x,y,exposure), xtalkSeqNumber)
       xtalkSeqNumber += 1
 
+class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
+    def __init__(self, options):
+        super(SpotTestCoordinator, self).__init__(options, 'SPOT_FLAT', 'SPOT')
+        self.imcount = int(options.get('imcount', '1'))
+        xoffset = float(options.get('xoffset'))
+        yoffset = float(options.get('yoffset'))
+        self.mask = options.get('mask')
+        bot.setLampOffset(xoffset, yoffset)
+        self.exposures = options.getList('expose')
+        self.points = options.getList('point')
+
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(Fe55TestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({'ExposureTime2': self.flatexposure})
+        return data
+
+    def set_filter(self, mask_filter):
+       bot_bench.setSpotFilter(mask_filter)
+
+    def take_images(self):
+
+        for point in self.points:
+            (x, y) = [float(x) for x in point.split()]
+            bot.moveTo(x, y)
+            for exposure in self.exposures:
+               (spotexposure, flatexposure) = exposure.split()
+               self.spotexposure = float(spotexposure)
+               self.flatexposure = float(flatexposure)
+               def expose_command():
+                  bot_bench.openShutter(self.spotexposure) # spot mask
+                  self.set_filter('empty1')
+                  bot_bench.openShutter(self.flatexposure) # flat
+               self.set_filter(self.mask)
+               self.take_bias_plus_image(self.spotexposure, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x,y,mask,exposure_1, exposure_2))
+
 def do_spot(options):
-   print "spot called %s" % options
-   bcount = int(options.get('bcount', '1'))
-   imcount = int(options.get('imcount', '1'))
-   xoffset = float(options.get('xoffset'))
-   yoffset = float(options.get('yoffset'))
-   mask = options.get('mask')
-   bot_bench.setSpotFilter(mask)
-   exposures = options.get('expose').replace('\n','').split(',')
-   points = options.get('point').replace('\n', '').split(',')
-   bot.setLampOffset(xoffset, yoffset)
-   spotSeqNumber = 0 
-   for point in points:
-      (x,y) = [float(x) for x in point.split()]
-      bot.moveTo(x,y)
-      for exposure in exposures:
-         exposure = float(exposure)
+    print "spot called %s" % options
+    tc = SpotTestCoordinator(options)
+    tc.take_images()
 
-         for b in range(bcount):
-            fitsHeaderData = {'ExposureTime': 0, 'TestType': 'SPOT', 'ImageType': 'BIAS', 'TestSeqNum': spotSeqNumber}
-            imageName, fileList = fp.takeBias(fitsHeaderData)
-            symlink(fileList,options['symlink'], 'SPOT', 'BIAS',spotSeqNumber)
 
-         exposeCommand = lambda: bot_bench.openShutter(exposure)
-         for i in range(imcount):
-            fitsHeaderData = {'ExposureTime': exposure, 'TestType': 'SPOT', 'ImageType': "%03.1f_%03.1f_%s_%03.1f" % (x,y,mask,exposure), 'TestSeqNum': spotSeqNumber}
-            imageName,fileList = fp.takeExposure(exposeCommand,fitsHeaderData)
-            symlink(fileList, options['symlink'], 'SPOT', "%03.1f_%03.1f_%s_%03.1f" % (x,y,mask,exposure), spotSeqNumber)
-         spotSeqNumber += 1
-
-def do_spot_flat(options):
-   print "spot called %s" % options
-   bcount = int(options.get('bcount', '1'))
-   imcount = int(options.get('imcount', '1'))
-   xoffset = float(options.get('xoffset'))
-   yoffset = float(options.get('yoffset'))
-   mask = options.get('mask')
-   exposures = options.get('expose').replace('\n','').split(',')
-   points = options.get('point').replace('\n', '').split(',')
-   bot.setLampOffset(xoffset, yoffset)
-   seqNumber = 0 
-   for point in points:
-      (x,y) = [float(x) for x in point.split()]
-      bot.moveTo(x,y)
-      for exposure in exposures:
-         (exposure_1, exposure_2) = exposure.split()
-         exposure_1 = float(exposure_1)
-         exposure_2 = float(exposure_2)
-
-         for b in range(bcount):
-            fitsHeaderData = {'ExposureTime': 0, 'TestType': 'SPOT_FLAT', 'ImageType': 'BIAS', 'TestSeqNum': seqNumber}
-            imageName, fileList = fp.takeBias(fitsHeaderData)
-            symlink(fileList,options['symlink'], 'SPOT', 'BIAS',seqNumber)
-
-         bot_bench.setSpotFilter(mask)
-         exposeCommand = lambda: bot_bench.openShutter(exposure_1)
-         secondExposeCommand = lambda: bot_bench.openShutter(exposure_2)
-         for i in range(imcount):
-            fitsHeaderData = {'ExposureTime': exposure_1, 'TestType': 'SPOT_FLAT', 
-                              'ImageType': "%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f" % (x,y,mask,exposure_1, exposure_2), 'TestSeqNum': seqNumber}
-            imageName,fileList = fp.takeMixedExposure(exposeCommand,fitsHeaderData, secondExposeCommand)
-            symlink(fileList, options['symlink'], 'SPOT_FLAT', "%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f" % (x,y,mask,exposure_1, exposure_2), seqNumber)
-         seqNumber += 1
