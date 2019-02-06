@@ -12,10 +12,11 @@ def sanityCheck():
    #biasOn = fp.isBackBiasOn()
    #if not biasOn:
    #  print "WARNING: Back bias is not on"
-
-   alerts = fp.getRaisedAlertSummary()
-   if alerts.alertState!=AlertState.NOMINAL:
-      print "WARNING: focal-plane subsystem is in alarm state %s" % alerts.alertState 
+   
+   state = fp.getState()
+   alert = state.getState(AlertState)
+   if alert!=AlertState.NOMINAL:
+      print "WARNING: focal-plane subsystem is in alert state %s" % alert 
 
 def clear(n=1):
    print "Clearing CCDs (%d)" % n

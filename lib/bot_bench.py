@@ -8,9 +8,10 @@ import time
 bb = CCS.attachProxy("bot-bench")
 
 def sanityCheck():
-   alerts = bb.getRaisedAlertSummary()
-   if alerts.alertState!=AlertState.NOMINAL:
-      print "WARNING: bot-bench subsystem is in alarm state %s" % alerts.alertState 
+   state = bb.getState()
+   alert = state.getState(AlertState)
+   if alert!=AlertState.NOMINAL:
+      print "WARNING: bot_bench subsystem is in alert state %s" % alert
 
 def setNDFilter(filter):
    sanityCheck()
@@ -27,13 +28,11 @@ def openShutter(exposure):
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
    bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure)))
-   ok = bb.ProjectorShutter().waitForClosed()
-   if not ok:
-      raise Exception("Shutter operation timed out")
+   bb.ProjectorShutter().waitForClosed()
 
 def openFe55Shutter(exposure):
    sanityCheck()
    print "Open Fe55 shutter for %s seconds" % exposure
-   bb.Fe55OpenShutters()
+   bb.fe55OpenShutters()
    time.sleep(exposure)
-   bb.Fe55CloseShutters()
+   bb.fe55CloseShutters()
