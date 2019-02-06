@@ -249,7 +249,7 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
                 exposure = float(exposure)
                 expose_command = lambda: bot_bench.openShutter(exposure)
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_%s_%s' % (x, y, exposure))
+                    self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%03.1f_%03.1f_%03.1f' % (x, y, exposure))
 
 
 def do_bias(options):
