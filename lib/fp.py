@@ -29,7 +29,6 @@ def takeBias(fitsHeaderData):
    # this could skip the startIntegration/endIntegration and got straigh to readout
    return takeExposure(fitsHeaderData=fitsHeaderData)    
 
-
 def takeExposure(exposeCommand=None, fitsHeaderData=None):
    sanityCheck()
    clear()
@@ -38,7 +37,9 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None):
    imageName = fp.startIntegration()
    print "Image name: %s" % imageName
    if exposeCommand: 
-      exposeCommand()
+      extraData = exposeCommand()
+      if extraData:
+          fp.setPrimaryHeader(extraData)
    fp.endIntegration()
    if autoSave:
      return (imageName, fp.waitForFitsFiles(imageTimeout))

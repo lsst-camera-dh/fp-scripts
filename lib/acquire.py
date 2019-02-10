@@ -217,18 +217,29 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.led = 'unknown'
+        self.current = -999
+
+    # Insert additional CCOB specific FITS file data
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(CCOBTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
+        return data
 
     def take_images(self):
         for point in self.points:
             (x, y) = [float(x) for x in point.split()]
             bot.moveTo(x, y)
             for exposure in self.exposures:
-                (led, current, duration) = exposure.split()
-                current = float(current)
+                (self.led, self.current, duration) = exposure.split()
+                self.current = float(self.current)
                 duration = float(duration)
-                expose_command = lambda: ccob.fireLED(led, current, duration)
+                def expose_command():
+                    adc = ccob.fireLED(self.led, self.current, duration)
+                    return {"CCOBADC": adc}
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (led, x, y))
+                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
 
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
