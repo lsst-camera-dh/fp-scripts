@@ -104,17 +104,21 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options, test_type, image_type):
         super(FlatFieldTestCoordinator, self).__init__(options, test_type, image_type)
         self.bcount = int(options.get('bcount', '1'))
+        self.use_photodiodes = True
 
     def set_filters(self, nd_filter, wl_filter):
         bot_bench.setNDFilter(nd_filter)
         bot_bench.setColorFilter(wl_filter)
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        pd_readout = PhotodiodeReadout(exposure)
-        pd_readout.start_accumulation()
+        if self.use_photodiodes:
+            pd_readout = PhotodiodeReadout(exposure)
+            pd_readout.start_accumulation()
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
-        # TODO: Why does this need the last argument - in fact it is not used?
-        pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+        if self.use_photodiodes:
+            # TODO: Why does this need the last argument - in fact it is not used?
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+        return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
         # TODO: Use per-filter config file to compute exposure
@@ -187,6 +191,8 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
         (fe55exposure, fe55count) = options.get('count').split()
         self.fe55exposure = float(fe55exposure)
         self.fe55count = int(fe55count)
+        self.nd_filter = options.get('nd')
+        self.use_photodiodes = False
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(Fe55TestCoordinator, self).create_fits_header_data(exposure, image_type)
@@ -197,15 +203,12 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
     def take_images(self):
         for flat in self.flats:
             wl_filter, e_per_pixel = flat.split()
-            #TODO: None? which ND filter to use?
-            nd_filter = 'None'
-            exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
-            print "exp %s filter %s" % (exposure, wl_filter)
+            exposure = self.compute_exposure_time(self.nd_filter, wl_filter, e_per_pixel)
+            print "exp %s filter %s,%s" % (exposure, wl_filter, self.nd_filter)
             def expose_command():
                 bot_bench.openShutter(exposure) # Flat
                 bot_bench.openFe55Shutter(self.fe55exposure) # Fe55
-            #TODO: The total exposure time is needed by photodiode?
-            self.set_filters(nd_filter, wl_filter)
+            self.set_filters(self.nd_filter, wl_filter)
             self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
 
 class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
