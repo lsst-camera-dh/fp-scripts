@@ -104,17 +104,21 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options, test_type, image_type):
         super(FlatFieldTestCoordinator, self).__init__(options, test_type, image_type)
         self.bcount = int(options.get('bcount', '1'))
+        self.use_photodiodes = True
 
     def set_filters(self, nd_filter, wl_filter):
         bot_bench.setNDFilter(nd_filter)
         bot_bench.setColorFilter(wl_filter)
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        pd_readout = PhotodiodeReadout(exposure)
-        pd_readout.start_accumulation()
+        if self.use_photodiodes:
+            pd_readout = PhotodiodeReadout(exposure)
+            pd_readout.start_accumulation()
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
-        # TODO: Why does this need the last argument - in fact it is not used?
-        pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+        if self.use_photodiodes:
+            # TODO: Why does this need the last argument - in fact it is not used?
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+        return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
         # TODO: Use per-filter config file to compute exposure
@@ -187,6 +191,8 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
         (fe55exposure, fe55count) = options.get('count').split()
         self.fe55exposure = float(fe55exposure)
         self.fe55count = int(fe55count)
+        self.nd_filter = options.get('nd')
+        self.use_photodiodes = False
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(Fe55TestCoordinator, self).create_fits_header_data(exposure, image_type)
@@ -197,15 +203,12 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
     def take_images(self):
         for flat in self.flats:
             wl_filter, e_per_pixel = flat.split()
-            #TODO: None? which ND filter to use?
-            nd_filter = 'None'
-            exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
-            print "exp %s filter %s" % (exposure, wl_filter)
+            exposure = self.compute_exposure_time(self.nd_filter, wl_filter, e_per_pixel)
+            print "exp %s filter %s,%s" % (exposure, wl_filter, self.nd_filter)
             def expose_command():
                 bot_bench.openShutter(exposure) # Flat
                 bot_bench.openFe55Shutter(self.fe55exposure) # Fe55
-            #TODO: The total exposure time is needed by photodiode?
-            self.set_filters(nd_filter, wl_filter)
+            self.set_filters(self.nd_filter, wl_filter)
             self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
 
 class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
@@ -217,18 +220,29 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.led = 'unknown'
+        self.current = -999
+
+    # Insert additional CCOB specific FITS file data
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(CCOBTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
+        return data
 
     def take_images(self):
         for point in self.points:
             (x, y) = [float(x) for x in point.split()]
             bot.moveTo(x, y)
             for exposure in self.exposures:
-                (led, current, duration) = exposure.split()
-                current = float(current)
+                (self.led, self.current, duration) = exposure.split()
+                self.current = float(self.current)
                 duration = float(duration)
-                expose_command = lambda: ccob.fireLED(led, current, duration)
+                def expose_command():
+                    adc = ccob.fireLED(self.led, self.current, duration)
+                    return {"CCOBADC": adc}
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (led, x, y))
+                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
 
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
@@ -251,6 +265,40 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
                 for i in range(self.imcount):
                     self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%03.1f_%03.1f_%03.1f' % (x, y, exposure))
 
+class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
+    def __init__(self, options):
+        super(SpotTestCoordinator, self).__init__(options, 'SPOT_FLAT', 'SPOT')
+        self.imcount = int(options.get('imcount', '1'))
+        xoffset = float(options.get('xoffset'))
+        yoffset = float(options.get('yoffset'))
+        self.mask = options.get('mask')
+        bot.setLampOffset(xoffset, yoffset)
+        self.exposures = options.getList('expose')
+        self.points = options.getList('point')
+
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({'ExposureTime2': self.flatexposure})
+        return data
+
+    def set_filter(self, mask_filter):
+        bot_bench.setSpotFilter(mask_filter)
+
+    def take_images(self):
+        for point in self.points:
+            (x, y) = [float(x) for x in point.split()]
+            bot.moveTo(x, y)
+            for exposure in self.exposures:
+                (spotexposure, flatexposure) = exposure.split()
+                self.spotexposure = float(spotexposure)
+                self.flatexposure = float(flatexposure)
+                def expose_command():
+                    bot_bench.openShutter(self.spotexposure) # spot mask
+                    self.set_filter('empty1')
+                    bot_bench.openShutter(self.flatexposure) # flat
+                self.set_filter(self.mask)
+                self.take_bias_plus_image(self.spotexposure, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.spotexposure, self.flatexposure))
 
 def do_bias(options):
     print "bias called %s" % options
@@ -296,3 +344,9 @@ def do_xtalk(options):
     print "xtalk called %s" % options
     tc = XTalkTestCoordinator(options)
     tc.take_images()
+
+def do_spot(options):
+    print "spot called %s" % options
+    tc = SpotTestCoordinator(options)
+    tc.take_images()
+    

@@ -23,6 +23,11 @@ def setColorFilter(filter):
    print "Setting Color filter "+filter
    bb.ColorFWheel().setNamedPosition(filter)
 
+def setSpotFilter(filter):
+   sanityCheck()
+   print "Setting Spot filter "+filter
+   bb.SpotProjFWheel().setNamedPosition(filter)
+
 # Open the flat field projector shutter
 def openShutter(exposure):
    sanityCheck()
