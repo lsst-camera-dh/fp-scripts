@@ -40,7 +40,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None):
    if exposeCommand: 
       extraData = exposeCommand()
       if extraData:
-          fp.setPrimaryHeader(extraData)
+          fp.setPrimaryHeaderKeyword(extraData)
    fp.endIntegration()
    if autoSave:
      return (imageName, fp.waitForFitsFiles(imageTimeout))
