@@ -34,13 +34,13 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None):
    sanityCheck()
    clear()
    print "Setting FITS headers %s" % fitsHeaderData
-   fp.setPrimaryHeaderKeyword(fitsHeaderData)
+   fp.setHeaderKeywords(fitsHeaderData)
    imageName = fp.startIntegration()
    print "Image name: %s" % imageName
    if exposeCommand: 
       extraData = exposeCommand()
       if extraData:
-          fp.setPrimaryHeaderKeyword(extraData)
+          fp.setHeaderKeywords(extraData)
    fp.endIntegration()
    if autoSave:
      return (imageName, fp.waitForFitsFiles(imageTimeout))
@@ -52,7 +52,7 @@ def takeCombinedExposure(exposeCommand=None, fitsHeaderData=None, secondExposeCo
    sanityCheck()
    clear()
    print "Setting FITS headers %s" % fitsHeaderData
-   fp.setPrimaryHeaderKeyword(fitsHeaderData)
+   fp.setHeaderKeywords(fitsHeaderData)
    imageName = fp.startIntegration()
    print "Image name: %s" % imageName
    if exposeCommand:
