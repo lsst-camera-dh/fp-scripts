@@ -25,7 +25,9 @@ def fireLED(led="red", current=0.009, seconds=0.05):
    driver.setLedCurrent(current)
    # Does this wait for the LED? (Apparently not)
    driver.startExposure()
-   time.sleep(seconds+0.1) # hopefully that is long enough?
+   time.sleep(seconds)
+   while driver.pollEnd():
+      time.sleep(0.1) # hopefully that is long enough?
    after = driver.getAdcValues().getPhotodiodeCurrent()
    return after
 
