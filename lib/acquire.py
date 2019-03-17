@@ -295,7 +295,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                 self.flatexposure = float(flatexposure)
                 def expose_command():
                     bot_bench.openShutter(self.spotexposure) # spot mask
-                    self.set_filter('empty1')
+                    self.set_filter('empty6') # empty1 was used for `grid'
                     bot_bench.openShutter(self.flatexposure) # flat
                 self.set_filter(self.mask)
                 self.take_bias_plus_image(self.spotexposure, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.spotexposure, self.flatexposure))
