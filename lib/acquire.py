@@ -206,10 +206,12 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
             exposure = self.compute_exposure_time(self.nd_filter, wl_filter, e_per_pixel)
             print "exp %s filter %s,%s" % (exposure, wl_filter, self.nd_filter)
             def expose_command():
-                bot_bench.openShutter(exposure) # Flat
+                if exposure>0:
+                    bot_bench.openShutter(exposure) # Flat
                 bot_bench.openFe55Shutter(self.fe55exposure) # Fe55
             self.set_filters(self.nd_filter, wl_filter)
-            self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
+            for i in range (self.fe55count):
+                self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
 
 class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
