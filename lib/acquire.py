@@ -80,8 +80,8 @@ class BiasPlusImagesTestCoordinator(TestCoordinator):
         self.bcount = int(options.get('bcount', '1'))
 
     def take_bias_plus_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        super(BiasPlusImagesTestCoordinator, self).take_bias_images(self.bcount)
-        super(BiasPlusImagesTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
+        self.take_bias_images(self.bcount)
+        self.take_image(exposure, expose_command, image_type, symlink_image_type)
 
 class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
     ''' A TestCoordinator for darks '''
