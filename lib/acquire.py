@@ -1,11 +1,13 @@
 import os
 import time
 
-import fp
+from fp import FocalPlane
 import bot_bench
 import ccob
 import bot
 from pd import PhotodiodeReadout
+
+fp = FocalPlane()
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -300,6 +302,70 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                 self.set_filter(self.mask)
                 self.take_bias_plus_image(self.spotexposure, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.spotexposure, self.flatexposure))
 
+class ScanTestCoordinator(TestCoordinator):
+    ''' A TestCoordinator for taking scan-mode images '''
+    def __init__(self, options):
+        super(ScanTestCoordinator, self).__init__(options, 'SCAN', 'SCAN')
+        self.transparent = options.getInt("n-transparent")
+        self.scanmode = options.getInt("n-scanmode")
+        self.itl_precols = options.getInt("itl-precols")
+        self.itl_readcols = options.getInt("itl-readcols")
+        self.itl_postcols = options.getInt("itl-postcols")
+        self.itl_prerows = options.getInt("itl-prerows")
+        self.itl_readrows = options.getInt("itl-readrows")
+        self.itl_postrows = options.getInt("itl-postrows")
+        # TODO: Work about e2v sensors
+
+    def take_images(self):
+        preCols = fp.getSequencerParameter("PreCols")
+        readCols = fp.getSequencerParameter("PreCols")
+        postCols = fp.getSequencerParameter("PostCols")
+        preRows = fp.getSequencerParameter("PreRows")
+        readRows = fp.getSequencerParameter("PreRows")
+        postRows = fp.getSequencerParameter("PostRows")
+        scanMode = fp.isScanMode()
+	print "Initial sequencer parameters"
+        
+	print "preCols=%d"  % preCols
+	print "readCols=%d" % readCols
+	print "postCols=%d" % postCols
+
+	print "preRows=%d"  % preRows
+	print "readRows=%d" % readRows
+	print "postRows=%d" % postRows
+
+	print "scanMode=%s" % scanMode 
+
+        # set up scan mode
+        fp.setSequencerParameter("PreCols",self.itl_precols)
+        fp.setSequencerParameter("PreCols",self.itl_readcols)
+        fp.setSequencerParameter("PostCols",self.itl_postcols)
+        fp.setSequencerParameter("PreRows",self.itl_prerows)
+        fp.setSequencerParameter("PreRows",self.itl_readrows)
+        fp.setSequencerParameter("PostRows",self.itl_postrows)
+        fp.setScanMode(True)
+
+	exposure = 1.0
+        expose_command = lambda: time.sleep(exposure)
+
+        for i in range(self.scanmode):
+           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None):
+
+        fp.setTransparentMode(True)
+
+        for i in range(self.transparent):
+           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None):
+
+        # Restore settings
+        fp.setSequencerParameter("PreCols",preCols)
+        fp.setSequencerParameter("PreCols",readCols)
+        fp.setSequencerParameter("PostCols",postCols)
+        fp.setSequencerParameter("PreRows",preRows)
+        fp.setSequencerParameter("PreRows",readRows)
+        fp.setSequencerParameter("PostRows",postRows)
+        fp.setScanMode(False)
+        fp.setTransparentMode(False)
+
 def do_bias(options):
     print "bias called %s" % options
     tc = BiasTestCoordinator(options)
@@ -349,4 +415,8 @@ def do_spot(options):
     print "spot called %s" % options
     tc = SpotTestCoordinator(options)
     tc.take_images()
-    
+
+def do_scan(options):
+    print "scan called %s" % options
+    tc = ScanTestCoordinator(options)
+    tc.take_images()
