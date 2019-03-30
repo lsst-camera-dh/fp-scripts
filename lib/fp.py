@@ -4,6 +4,7 @@ from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
 import bot_bench
+import array
 
 fp = CCS.attachProxy("focal-plane")
 autoSave = True
@@ -90,7 +91,7 @@ def getSequencerParameter(name):
       unique = set(params)
       if len(unique)!=1:
          raise "Inconsistent sequencer parameters "+params
-      return unqiue.pop()
+      return unique.pop()
 
 def setSequencerParameter(name, value):
    for raft in rafts():
@@ -99,15 +100,16 @@ def setSequencerParameter(name, value):
 def isScanMode():
    result = []
    for reb in rebs():
-      result += reg.getRegister(0x330000,1)
+      reg = reb.getRegister(0x330000,1).getValues()
+      result += reg
    unique = set(result)
    if len(unique)!=1:
-      raise "Inconsistent scan mode "+result
+      raise Exception("Inconsistent scan mode")
    return unique.pop()
 
 def setScanMode(value):
    for reb in rebs():
-      reb.setRegister(0x330000, 1 if value else 0) 
+      reb.setRegister(0x330000, array.array('i',[1] if value else [0])) 
 
 def isTransparentMode():
    result = []
@@ -120,5 +122,5 @@ def isTransparentMode():
 
 def setTransparentMode(value):
    for aspic in aspics():
-      aspic.change(tm,  1 if value else 0)      
+      aspic.change("tm",  1 if value else 0)      
    

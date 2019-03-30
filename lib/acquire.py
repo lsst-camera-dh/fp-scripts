@@ -318,10 +318,10 @@ class ScanTestCoordinator(TestCoordinator):
 
     def take_images(self):
         preCols = fp.getSequencerParameter("PreCols")
-        readCols = fp.getSequencerParameter("PreCols")
+        readCols = fp.getSequencerParameter("ReadCols")
         postCols = fp.getSequencerParameter("PostCols")
         preRows = fp.getSequencerParameter("PreRows")
-        readRows = fp.getSequencerParameter("PreRows")
+        readRows = fp.getSequencerParameter("ReadRows")
         postRows = fp.getSequencerParameter("PostRows")
         scanMode = fp.isScanMode()
 	print "Initial sequencer parameters"
@@ -338,10 +338,10 @@ class ScanTestCoordinator(TestCoordinator):
 
         # set up scan mode
         fp.setSequencerParameter("PreCols",self.itl_precols)
-        fp.setSequencerParameter("PreCols",self.itl_readcols)
+        fp.setSequencerParameter("ReadCols",self.itl_readcols)
         fp.setSequencerParameter("PostCols",self.itl_postcols)
         fp.setSequencerParameter("PreRows",self.itl_prerows)
-        fp.setSequencerParameter("PreRows",self.itl_readrows)
+        fp.setSequencerParameter("ReadRows",self.itl_readrows)
         fp.setSequencerParameter("PostRows",self.itl_postrows)
         fp.setScanMode(True)
 
@@ -349,19 +349,19 @@ class ScanTestCoordinator(TestCoordinator):
         expose_command = lambda: time.sleep(exposure)
 
         for i in range(self.scanmode):
-           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None):
+           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         fp.setTransparentMode(True)
 
         for i in range(self.transparent):
-           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None):
+           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
         fp.setSequencerParameter("PreCols",preCols)
-        fp.setSequencerParameter("PreCols",readCols)
+        fp.setSequencerParameter("ReadCols",readCols)
         fp.setSequencerParameter("PostCols",postCols)
         fp.setSequencerParameter("PreRows",preRows)
-        fp.setSequencerParameter("PreRows",readRows)
+        fp.setSequencerParameter("ReadRows",readRows)
         fp.setSequencerParameter("PostRows",postRows)
         fp.setScanMode(False)
         fp.setTransparentMode(False)
