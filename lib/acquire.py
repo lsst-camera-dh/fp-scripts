@@ -320,6 +320,7 @@ class ScanTestCoordinator(TestCoordinator):
         preCols = fp.getSequencerParameter("PreCols")
         readCols = fp.getSequencerParameter("ReadCols")
         postCols = fp.getSequencerParameter("PostCols")
+        overCols = fp.getSequencerParameter("OverCols")
         preRows = fp.getSequencerParameter("PreRows")
         readRows = fp.getSequencerParameter("ReadRows")
         postRows = fp.getSequencerParameter("PostRows")
@@ -329,6 +330,7 @@ class ScanTestCoordinator(TestCoordinator):
 	print "preCols=%d"  % preCols
 	print "readCols=%d" % readCols
 	print "postCols=%d" % postCols
+	print "overCols=%d" % overCols
 
 	print "preRows=%d"  % preRows
 	print "readRows=%d" % readRows
@@ -340,6 +342,7 @@ class ScanTestCoordinator(TestCoordinator):
         fp.setSequencerParameter("PreCols",self.itl_precols)
         fp.setSequencerParameter("ReadCols",self.itl_readcols)
         fp.setSequencerParameter("PostCols",self.itl_postcols)
+        fp.setSequencerParameter("OverCols",0)
         fp.setSequencerParameter("PreRows",self.itl_prerows)
         fp.setSequencerParameter("ReadRows",self.itl_readrows)
         fp.setSequencerParameter("PostRows",self.itl_postrows)
@@ -360,6 +363,7 @@ class ScanTestCoordinator(TestCoordinator):
         fp.setSequencerParameter("PreCols",preCols)
         fp.setSequencerParameter("ReadCols",readCols)
         fp.setSequencerParameter("PostCols",postCols)
+        fp.setSequencerParameter("OverCols",overCols)
         fp.setSequencerParameter("PreRows",preRows)
         fp.setSequencerParameter("ReadRows",readRows)
         fp.setSequencerParameter("PostRows",postRows)
