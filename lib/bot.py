@@ -20,13 +20,21 @@ def sanityCheck():
 def setLampOffset(x=0, y=0):
    sanityCheck()
    print "Setting BOT lamp offset (%g,%g)" % (x,y)
+   bot.enable("X")
+   bot.enable("Y")
    bot.setLampOffset(x,y)
+   bot.disable("X")
+   bot.disable("Y")
 
 def moveTo(x=0, y=0):
    sanityCheck()
    print "Moving BOT lamp to (%g,%g)" % (x,y)
+   bot.enable("X")
+   bot.enable("Y")
    bot.setLampPosition(x,y)
    waitForMove()
+   bot.disable("X")
+   bot.disable("Y")
    
 def waitForMove():
    ll = LampListener()
