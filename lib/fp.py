@@ -10,9 +10,9 @@ autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
 def sanityCheck():
-   #biasOn = fp.isBackBiasOn()
-   #if not biasOn:
-   #  print "WARNING: Back bias is not on"
+   biasOn = fp.isBackBiasOn()
+   if not biasOn:
+     print "WARNING: Back bias is not on"
    
    state = fp.getState()
    alert = state.getState(AlertState)
