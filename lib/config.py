@@ -33,7 +33,7 @@ class Config(dict):
        if defaultValue:
           return defaultValue
        else:
-          return None
+          raise Exception('Missing config value %s' % key)
      return int(value)    
 
   def getFloat(self, key, defaultValue=None):
@@ -42,7 +42,7 @@ class Config(dict):
        if defaultValue:
           return defaultValue
        else:
-          return None
+          raise Exception('Missing config value %s' % key)
      return float(value)    
 
   def getList(self, key):
