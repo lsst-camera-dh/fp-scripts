@@ -3,9 +3,11 @@ from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
+from java.time import Duration
 
 # Temporary work around for problems with CCS responsiveness
-#CCS.setDefaultTimeout(30)
+Timeout = Duration.ofSeconds(30)
+CCS.setDefaultTimeout(Timeout)
 
 # Parse command line options
 
@@ -21,6 +23,7 @@ if len(args)!=1:
   exit(1)
 
 #CCS.aliases = {'focal-plane': 'focal-plane-sim', 'bot-bench': 'bot-bench-sim'}
+#CCS.aliases = {'focal-plane': 'focal-plane-sim'}
 #ccs_sub.write_versions()
 
 import config
