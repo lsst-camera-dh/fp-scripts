@@ -84,7 +84,7 @@ class PhotodiodeReadout(object):
 #        bbsub.synchCommand(60, "resetPD")
 #        bbsub.synchCommand(60, "clearPDbuff")
 #        bbsub.sendSynchCommand("resetPD")
-        bbsub.sendSynchCommand("Photodiode/setCurrentRange 2e-8")
+        bbsub.PhotoDiode().setCurrentRange(2e-8)
         bbsub.sendSynchCommand("clearPDbuff")
 
         # start accummulating current readings
