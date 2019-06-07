@@ -128,16 +128,17 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
+        e_per_pixel = float(e_per_pixel)
         source = self.filterConfig.getFloat("source")
         dnf = self.filterConfig.getFloat(nd_filter.lower())
         wlf = self.filterConfig.getFloat(wl_filter.lower())
         seconds = e_per_pixel/source/dnf/wlf
         if seconds>self.hilim:
            print "Warning: exposure time %g > hilim (%g)" % (seconds, self.hilim)
-           seconds = hilim
+           seconds = self.hilim
         if seconds<self.lolim:
            print "Warning: exposure time %g < lolim (%g)" % (seconds, self.lolim)
-           seconds = lolim
+           seconds = self.lolim
         print "Computed Exposure %g for nd=%s wl=%s e_per_pixel=%g" % (seconds, nd_filter, wl_filter, e_per_pixel)
         return seconds
 
