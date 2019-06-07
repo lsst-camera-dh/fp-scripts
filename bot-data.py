@@ -3,9 +3,10 @@ from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
+from java.time import Duration
 
 # Temporary work around for problems with CCS responsiveness
-#CCS.setDefaultTimeout(30)
+CCS.setDefaultTimeout(Duration.ofSeconds(30))
 
 # Parse command line options
 
