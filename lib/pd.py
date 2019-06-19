@@ -64,9 +64,17 @@ class PhotodiodeReadout(object):
 
         self.navg = int(5)
 
-        # add a buffer to duration of PD readout
-        total_time = exptime + buffertime
-        self.nreads = min(total_time*60./self.nplc/self.navg, max_reads)
+	# adjust navg so that it gets below max_reads
+	self.nreads = max_reads*2 
+	while self.nreads > max_reads:
+		# add a buffer to duration of PD readout
+		total_time = exptime + buffertime
+		self.nreads = int(total_time*60./self.nplc/self.navg)
+		if self.nreads<max_reads:
+			break
+		self.navg = self.navg + 1
+
+#        self.nreads = min(total_time*60./self.nplc/self.navg, max_reads)
         print("self.nreads = ",self.nreads)
         self.nreads = int(self.nreads)
 
