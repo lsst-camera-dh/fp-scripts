@@ -18,7 +18,7 @@ from ccs_scripting_tools import CcsSubsystems, CCS
 #from ts8_utils import set_ccd_info, write_REB_info
 
 bbsub = CCS.attachProxy("bot-bench")
-#pdsub = CCS.attachProxy("bot-bench PhotoDiode")
+#pdsub = CCS.attachProxy("bot-bench/PhotoDiode")
 
 __all__ = ["PhotodiodeReadout","logger"]
 
@@ -50,7 +50,7 @@ class PhotodiodeReadout(object):
             Maximum number of reads of monitoring photodiode.  Default: 2048.
         """
 
-        buffertime = 8.0
+        buffertime = 1.0
 
 
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
@@ -62,15 +62,25 @@ class PhotodiodeReadout(object):
         else:
             self.nplc = 0.25
 
-        # add a buffer to duration of PD readout
-        total_time = exptime + buffertime
-        self.nreads = min(total_time*60./self.nplc, max_reads)
+        self.navg = int(5)
+
+	# adjust navg so that it gets below max_reads
+	self.nreads = max_reads*2 
+	while self.nreads > max_reads:
+		# add a buffer to duration of PD readout
+		total_time = exptime + buffertime
+		self.nreads = int(total_time*60./self.nplc/self.navg)
+		if self.nreads<max_reads:
+			break
+		self.navg = self.navg + 1
+
+#        self.nreads = min(total_time*60./self.nplc/self.navg, max_reads)
         print("self.nreads = ",self.nreads)
         self.nreads = int(self.nreads)
 
         # adjust PD readout when max_reads is reached
         # (needs to be between 0.001 and 60 - add code to check)
-        self.nplc = (exptime + buffertime)*60./self.nreads
+#        self.nplc = (exptime + buffertime)*60./self.nreads
         pd_result = None
         self.start_time = None
 
@@ -84,13 +94,21 @@ class PhotodiodeReadout(object):
 #        bbsub.synchCommand(60, "resetPD")
 #        bbsub.synchCommand(60, "clearPDbuff")
 #        bbsub.sendSynchCommand("resetPD")
-        bbsub.sendSynchCommand("Photodiode/setCurrentRange 2e-8")
+        bbsub.PhotoDiode().setCurrentRange(2e-8)
         bbsub.sendSynchCommand("clearPDbuff")
+        logger.info("AVER settings are happening")
+	if self.navg != 1:
+		bbsub.PhotoDiode().send("AVER:COUNT %d" % self.navg)
+		bbsub.PhotoDiode().send("AVER:TCON REP")
+		bbsub.PhotoDiode().send("AVER ON")
+	else:
+		bbsub.PhotoDiode().send("AVER OFF")
 
         # start accummulating current readings
         logger.info("accumPDBuffer being called with self.nreads = %d and self.nplc = %f",self.nreads,self.nplc)
 #        pd_result = bbsub.asynchCommand("accumPDBuffer", self.nreads,
 #                                                    self.nplc, True)
+        bbsub.PhotoDiode().setRate(self.nplc)
         pd_result = bbsub.sendAsynchCommand("accumPDBuffer", self.nreads,
                                                     self.nplc)
         self.start_time = time.time()

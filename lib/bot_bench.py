@@ -32,8 +32,15 @@ def setSpotFilter(filter):
 def openShutter(exposure):
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
+   a=time.time()
    bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure)))
+   b=time.time()
+   time.sleep(0.03*exposure)
+   c=time.time()
    bb.ProjectorShutter().waitForClosed()
+   d=time.time()
+   print ("{} sec for open exposure, {} sec for a sleeping,  {} sec for waitForClosed".format(b-a, c-b, d-c))
+   print "Shutter closed"
 
 def openFe55Shutter(exposure):
    sanityCheck()
@@ -41,3 +48,6 @@ def openFe55Shutter(exposure):
    bb.fe55OpenShutters()
    time.sleep(exposure)
    bb.fe55CloseShutters()
+
+def readPDCurrent():
+   return bb.readPDCurrent()
