@@ -6,8 +6,7 @@ from ccs import proxies
 from java.time import Duration
 
 # Temporary work around for problems with CCS responsiveness
-Timeout = Duration.ofSeconds(30)
-CCS.setDefaultTimeout(Timeout)
+CCS.setDefaultTimeout(Duration.ofSeconds(30))
 
 # Parse command line options
 

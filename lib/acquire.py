@@ -1,6 +1,7 @@
 import os
 import time
 
+import config
 import fp
 import bot_bench
 import ccob
@@ -103,8 +104,14 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     ''' A TestCoordinator for all tests that involve taking flatS with the flat field generator '''
     def __init__(self, options, test_type, image_type):
         super(FlatFieldTestCoordinator, self).__init__(options, test_type, image_type)
-        self.bcount = int(options.get('bcount', '1'))
+        self.bcount = options.getInt('bcount', 1)
         self.use_photodiodes = True
+        self.hilim = options.getFloat('hilim',999.0)
+        self.lolim = options.getFloat('lolim',1.0)
+        self.filterConfigFile = options.get('filterconfig','filter.cfg')
+        self.filterConfig = config.Config(dict(config.parseConfig(self.filterConfigFile).items('FILTER')))
+        if not self.filterConfig:
+           raise Exception("Missing filter config file: %s" % self.filterConfigFile)
 
     def set_filters(self, nd_filter, wl_filter):
         bot_bench.setNDFilter(nd_filter)
@@ -121,8 +128,19 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
-        # TODO: Use per-filter config file to compute exposure
-        return float(e_per_pixel)/100.0
+        e_per_pixel = float(e_per_pixel)
+        source = self.filterConfig.getFloat("source")
+        dnf = self.filterConfig.getFloat(nd_filter.lower())
+        wlf = self.filterConfig.getFloat(wl_filter.lower())
+        seconds = e_per_pixel/source/dnf/wlf
+        if seconds>self.hilim:
+           print "Warning: exposure time %g > hilim (%g)" % (seconds, self.hilim)
+           seconds = self.hilim
+        if seconds<self.lolim:
+           print "Warning: exposure time %g < lolim (%g)" % (seconds, self.lolim)
+           seconds = self.lolim
+        print "Computed Exposure %g for nd=%s wl=%s e_per_pixel=%g" % (seconds, nd_filter, wl_filter, e_per_pixel)
+        return seconds
 
 class FlatPairTestCoordinator(FlatFieldTestCoordinator):
     ''' A TestCoordinator for flat pairs'''
