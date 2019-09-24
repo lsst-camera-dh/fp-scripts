@@ -11,9 +11,10 @@ autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
 def sanityCheck():
-   biasOn = fp.isBackBiasOn()
-   if not biasOn:
-     print "WARNING: Back bias is not on"
+   # Was this ever implemented on focal-plane?
+   #biasOn = fp.isBackBiasOn()
+   #if not biasOn:
+   #   print "WARNING: Back bias is not on"
    
    state = fp.getState()
    alert = state.getState(AlertState)
@@ -25,18 +26,18 @@ def clear(n=1):
    fp.clear(n)
    fp.waitForSequencer(Duration.ofSeconds(10))
 
-def takeBias(fitsHeaderData):
+def takeBias(fitsHeaderData, annotation=None, locations=None):
    # TODO: This may not be the best way to take bias images
    # It may be better to define a takeBias command at the subsystem layer, since
    # this could skip the startIntegration/endIntegration and got straigh to readout
-   return takeExposure(fitsHeaderData=fitsHeaderData)    
+   return takeExposure(fitsHeaderData=fitsHeaderData, annotation=annotation, locations=locations)    
 
-def takeExposure(exposeCommand=None, fitsHeaderData=None):
+def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None):
    sanityCheck()
    clear()
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
-   imageName = fp.startIntegration()
+   imageName = fp.startIntegration(annotation, locations)
    print "Image name: %s" % imageName
    if exposeCommand: 
       extraData = exposeCommand()
@@ -47,26 +48,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None):
      return (imageName, fp.waitForFitsFiles(imageTimeout))
    else:
      fp.waitForImages(imageTimeout)
-     return (imageName, None)    
-
-def takeCombinedExposure(exposeCommand=None, fitsHeaderData=None, secondExposeCommand=None):
-   sanityCheck()
-   clear()
-   print "Setting FITS headers %s" % fitsHeaderData
-   fp.setHeaderKeywords(fitsHeaderData)
-   imageName = fp.startIntegration()
-   print "Image name: %s" % imageName
-   if exposeCommand:
-      exposeCommand()
-   if secondExposeCommand:
-      bot_bench.setSpotFilter('open') # change to actual name for an open spot
-      secondExposeCommand()
-   fp.endIntegration()
-   if autoSave:
-     return (imageName, fp.waitForFitsFiles(imageTimeout))
-   else:
-     fp.waitForImages(imageTimeout)
-     return (imageName, None)   
+     return (imageName, None)      
 
 def rafts():
    #TODO: Should not be hardwired
@@ -75,12 +57,14 @@ def rafts():
 def rebs():
    result = []
    for r in rafts():
+      #TODO: Not correct for non-science rafts
       result += [r.Reb0(), r.Reb1(), r.Reb2()]
    return result
 
 def aspics():
    result = []
    for r in rebs():
+      #TODO: Not correct for non-science rafts
       result += [r.ASPIC0(), r.ASPIC1(), r.ASPIC2(), r.ASPIC3(), r.ASPIC4(), r.ASPIC5() ]
    return result
 

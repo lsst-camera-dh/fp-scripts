@@ -1,12 +1,12 @@
 import os
 import time
-
 import config
 import fp
 import bot_bench
 import ccob
 import bot
 from pd import PhotodiodeReadout
+from org.lsst.ccs.utilities.location import LocationSet
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -16,6 +16,8 @@ class TestCoordinator(object):
         self.test_type = test_type
         self.image_type = image_type
         self.test_seq_num = 0
+        self.annotation = options['annotation']
+        self.locations = LocationSet(options['locations'])
 
     def take_images(self):
         pass
@@ -46,7 +48,7 @@ class TestCoordinator(object):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
         fits_header_data = self.create_fits_header_data(exposure, image_type)
-        image_name, file_list = fp.takeExposure(expose_command, fits_header_data)
+        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
         self.test_seq_num += 1
         return (image_name, file_list)
