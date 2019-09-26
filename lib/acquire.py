@@ -16,8 +16,8 @@ class TestCoordinator(object):
         self.test_type = test_type
         self.image_type = image_type
         self.test_seq_num = 0
-        self.annotation = options['annotation']
-        self.locations = LocationSet(options['locations'])
+        self.annotation = options.get('annotation','')
+        self.locations = LocationSet(options.get('locations',''))
 
     def take_images(self):
         pass
