@@ -161,7 +161,7 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.set_filters(nd_filter, self.wl_filter)
             self.take_bias_images(self.bcount)
             for pair in range(2):
-                self.take_image(exposure, expose_command, symlink_image_type='%s_%s_flat%d' % (self.wl_filter, e_per_pixel, pair))
+                self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (nd_filter, self.wl_filter, e_per_pixel, pair))
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
