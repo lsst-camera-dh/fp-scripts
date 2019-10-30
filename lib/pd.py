@@ -17,8 +17,12 @@ except ImportError:
 from ccs_scripting_tools import CcsSubsystems, CCS
 #from ts8_utils import set_ccd_info, write_REB_info
 
-bbsub = CCS.attachProxy("bot-bench")
-#pdsub = CCS.attachProxy("bot-bench PhotoDiode")
+bbsub = None
+try:
+    bbsub = CCS.attachProxy("bot-bench")
+    #pdsub = CCS.attachProxy("bot-bench PhotoDiode")
+except:
+    pass
 
 __all__ = ["PhotodiodeReadout","logger"]
 

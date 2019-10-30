@@ -3,16 +3,17 @@ from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
-import bot_bench
+#import bot_bench
+import comcam_bench as bot_bench
 
 fp = CCS.attachProxy("focal-plane")
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
 def sanityCheck():
-   biasOn = fp.isBackBiasOn()
-   if not biasOn:
-     print "WARNING: Back bias is not on"
+#   biasOn = fp.isBackBiasOn()
+#   if not biasOn:
+#     print "WARNING: Back bias is not on"
    
    state = fp.getState()
    alert = state.getState(AlertState)

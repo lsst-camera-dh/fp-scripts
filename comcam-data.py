@@ -22,7 +22,7 @@ if len(args)!=1:
   parser.print_help()
   exit(1)
 
-CCS.aliases = {'bot-bench': 'comcam-bench'}
+CCS.aliases = {'focal-plane': 'comcam-fp', 'bot-bench': 'comcam-bench'}
 #CCS.aliases = {'focal-plane': 'focal-plane-sim', 'bot-bench': 'bot-bench-sim'}
 #CCS.aliases = {'focal-plane': 'focal-plane-sim'}
 #ccs_sub.write_versions()

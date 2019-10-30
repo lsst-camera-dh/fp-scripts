@@ -2,8 +2,8 @@ import os
 import time
 
 import fp
-import bot_bench
-import ccob
+import comcam_bench as bot_bench
+#import ccob
 import bot
 from pd import PhotodiodeReadout
 
