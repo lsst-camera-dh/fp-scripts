@@ -10,6 +10,9 @@ from java.time import Duration
 from collections import namedtuple
 import logging
 import re
+import datetime
+
+
 try:
     import java.lang
 except ImportError:
@@ -139,8 +142,11 @@ class PhotodiodeReadout(object):
         self.destination = destination_spec
         logger.info("PD destination directory = %s",self.destination)
 
+        today = datetime.date.today()
+        dtstr = today.strftime('%Y%m%d')
+
         # make sure Photodiode readout has had enough time to run
-        pd_filename = os.path.join(self.destination,"Photodiode_Readings.txt")
+        pd_filename = os.path.join(self.destination,"Photodiode_Readings_%s_%d.txt" % (dtstr,seqno))
 
         print("The ultimate pd filename is ",pd_filename)
 
