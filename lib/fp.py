@@ -3,7 +3,7 @@ from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
-import bot_bench
+#import bot_bench
 import array
 
 fp = CCS.attachProxy("focal-plane")

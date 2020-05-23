@@ -1,6 +1,8 @@
 import re
 import ConfigParser
 import StringIO
+import json
+import voltages
 try:
   import acquire
 except:
@@ -16,8 +18,8 @@ def parseConfig(file):
   config.readfp(StringIO.StringIO("".join(slines))) 
   return config
 
-def setvoltage(avoltage):
-  print(avoltage)
+def setvoltages(avoltage):
+  voltages.setvoltages(json.loads(avoltage))
 
 def execute(config, command_line_options):
   try:
@@ -31,7 +33,7 @@ def execute(config, command_line_options):
 
   for avoltage in voltages:
     if avoltage is not None:
-       setvoltage(avoltage)
+       setvoltages(avoltage)
 
     items = config.options("ACQUIRE")
     for item in items:
