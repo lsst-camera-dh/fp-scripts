@@ -1,7 +1,6 @@
 #!/usr/bin/env ccs-script
 import sys
 import os
-sys.path.insert(0,"/gpfs/slac/lsst/fs1/g/data/youtsumi/FullRafts/VoltageOptimization/fp-scripts/lib")
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from org.lsst.ccs.subsystem.rafts.data import RaftException
