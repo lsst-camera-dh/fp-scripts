@@ -6,7 +6,8 @@ from ccs import proxies
 #import bot_bench
 import array
 
-fp = CCS.attachProxy("focal-plane")
+fp = CCS.attachProxy("fp-3rebs")
+ts8bench = CCS.attachProxy("ts8-bench")
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
@@ -23,6 +24,7 @@ def sanityCheck():
 
 def clear(n=1):
    print "Clearing CCDs (%d)" % n
+   fp.waitForSequencer(Duration.ofSeconds(10))
    fp.clear(n)
    fp.waitForSequencer(Duration.ofSeconds(10))
 
@@ -38,11 +40,13 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
    imageName = fp.startIntegration(annotation, locations)
+   ts8bench.openShutter()
    print "Image name: %s" % imageName
    if exposeCommand: 
       extraData = exposeCommand()
       if extraData:
           fp.setHeaderKeywords(extraData)
+   ts8bench.closeShutter()
    fp.endIntegration()
    if autoSave:
      return (imageName, fp.waitForFitsFiles(imageTimeout))

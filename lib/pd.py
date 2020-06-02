@@ -17,7 +17,8 @@ except ImportError:
 from ccs_scripting_tools import CcsSubsystems, CCS
 #from ts8_utils import set_ccd_info, write_REB_info
 
-bbsub = CCS.attachProxy("bot-bench")
+bbsub = CCS.attachProxy("ts8-bench")
+bbsub.PhotoDiode = bbsub.Monitor
 #pdsub = CCS.attachProxy("bot-bench/PhotoDiode")
 
 __all__ = ["PhotodiodeReadout","logger"]
@@ -94,8 +95,10 @@ class PhotodiodeReadout(object):
 #        bbsub.synchCommand(60, "resetPD")
 #        bbsub.synchCommand(60, "clearPDbuff")
 #        bbsub.sendSynchCommand("resetPD")
+        bbsub.PhotoDiode().reset()
         bbsub.PhotoDiode().setCurrentRange(2e-8)
-        bbsub.sendSynchCommand("clearPDbuff")
+        bbsub.PhotoDiode().clrbuff()
+#        bbsub.sendSynchCommand("clearPDbuff")
         logger.info("AVER settings are happening")
 	if self.navg != 1:
 		bbsub.PhotoDiode().send("AVER:COUNT %d" % self.navg)
@@ -109,8 +112,7 @@ class PhotodiodeReadout(object):
 #        pd_result = bbsub.asynchCommand("accumPDBuffer", self.nreads,
 #                                                    self.nplc, True)
         bbsub.PhotoDiode().setRate(self.nplc)
-        pd_result = bbsub.sendAsynchCommand("accumPDBuffer", self.nreads,
-                                                    self.nplc)
+        pd_result = bbsub.PhotoDiode().accumBuffer(self.nreads,self.nplc)
         self.start_time = time.time()
         logger.info("Photodiode readout accumulation started at %f",
                          self.start_time)
@@ -120,7 +122,7 @@ class PhotodiodeReadout(object):
             time.sleep(0.25)
             try:
 #                running = bbsub.synchCommand(20, "isPDAccumInProgress").getResult()
-                running = bbsub.sendSynchCommand( "isPDAccumInProgress")
+                running = bbsub.PhotoDiode().isAccumInProgress()
 #.getResult()
             except StandardError as eobj:
                 logger.info("PhotodiodeReadout.start_accumulation:")
@@ -147,7 +149,7 @@ class PhotodiodeReadout(object):
         logger.info("Photodiode about to be readout at %f",
                          time.time() - self.start_time)
         readTimeout = Duration.ofSeconds(1000)
-        result = bbsub.sendSynchCommand(readTimeout, "readPDbuffer", pd_filename)
+        result = bbsub.PhotoDiode().readBuffer( pd_filename)
         logger.info("Photodiode readout accumulation finished at %f",
                          time.time() - self.start_time)
 #        logger.info("Photodiode readout accumulation finished at %f, %s",

@@ -2,8 +2,8 @@ import os
 import time
 import config
 import fp
-import bot_bench
-import ccob
+import ts8_bench as bot_bench
+#import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
@@ -115,8 +115,8 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         if not self.filterConfig:
            raise Exception("Missing filter config file: %s" % self.filterConfigFile)
 
-    def set_filters(self, nd_filter, wl_filter):
-        bot_bench.setNDFilter(nd_filter)
+    def set_filters(self, slitwidth, wl_filter):
+        bot_bench.setSlitWidth(slitwidth)
         bot_bench.setColorFilter(wl_filter)
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
@@ -129,19 +129,18 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
         return (image_name, file_list)
 
-    def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
+    def compute_exposure_time(self, slitwidth, wl_filter, e_per_pixel):
         e_per_pixel = float(e_per_pixel)
         source = self.filterConfig.getFloat("source")
-        dnf = self.filterConfig.getFloat(nd_filter.lower())
         wlf = self.filterConfig.getFloat(wl_filter.lower())
-        seconds = e_per_pixel/source/dnf/wlf
+        seconds = e_per_pixel/source/wlf
         if seconds>self.hilim:
            print "Warning: exposure time %g > hilim (%g)" % (seconds, self.hilim)
            seconds = self.hilim
         if seconds<self.lolim:
            print "Warning: exposure time %g < lolim (%g)" % (seconds, self.lolim)
            seconds = self.lolim
-        print "Computed Exposure %g for nd=%s wl=%s e_per_pixel=%g" % (seconds, nd_filter, wl_filter, e_per_pixel)
+        print "Computed Exposure %g for nd=%s wl=%s e_per_pixel=%g" % (seconds, slitwidth, wl_filter, e_per_pixel)
         return seconds
 
 class FlatPairTestCoordinator(FlatFieldTestCoordinator):
@@ -153,15 +152,15 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
 
     def take_images(self):
         for flat in self.flats:
-            e_per_pixel, nd_filter = flat.split()
+            e_per_pixel, slitwidth = flat.split()
             e_per_pixel = float(e_per_pixel)
-            exposure = self.compute_exposure_time(nd_filter, self.wl_filter, e_per_pixel)
+            exposure = self.compute_exposure_time(slitwidth, self.wl_filter, e_per_pixel)
             expose_command = lambda: bot_bench.openShutter(exposure)
-            print "exp %s filter %s" % (exposure, nd_filter)
-            self.set_filters(nd_filter, self.wl_filter)
+            print "exp %s filter %s" % (exposure, slitwidth)
+            self.set_filters(slitwidth, self.wl_filter)
             self.take_bias_images(self.bcount)
             for pair in range(2):
-                self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (nd_filter, self.wl_filter, e_per_pixel, pair))
+                self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (slitwidth, self.wl_filter, e_per_pixel, pair))
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
@@ -181,12 +180,12 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
 
     def take_images(self):
         for sflat in self.sflats:
-            wl_filter, e_per_pixel, count, nd_filter = sflat.split()
+            wl_filter, e_per_pixel, count, slitwidth = sflat.split()
             count = int(count)
             e_per_pixel = float(e_per_pixel)
-            exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
+            exposure = self.compute_exposure_time(slitwidth, wl_filter, e_per_pixel)
             expose_command = lambda: bot_bench.openShutter(exposure)
-            self.set_filters(nd_filter, wl_filter)
+            self.set_filters(slitwidth, wl_filter)
             for c in range(count):
                 self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s'% (wl_filter, self.low_or_high(e_per_pixel)))
 
@@ -198,10 +197,10 @@ class LambdaTestCoordinator(FlatFieldTestCoordinator):
 
     def take_images(self):
         for lamb in self.lambdas:
-            wl_filter, e_per_pixel, nd_filter = lamb.split()
-            exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
+            wl_filter, e_per_pixel, slitwidth = lamb.split()
+            exposure = self.compute_exposure_time(slitwidth, wl_filter, e_per_pixel)
             expose_command = lambda: bot_bench.openShutter(exposure)
-            self.set_filters(nd_filter, wl_filter)
+            self.set_filters(slitwidth, wl_filter)
             self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s' % (wl_filter, e_per_pixel))
 
 class Fe55TestCoordinator(FlatFieldTestCoordinator):
@@ -211,7 +210,7 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
         (fe55exposure, fe55count) = options.get('count').split()
         self.fe55exposure = float(fe55exposure)
         self.fe55count = int(fe55count)
-        self.nd_filter = options.get('nd')
+        self.slitwidth = options.get('nd')
         self.use_photodiodes = False
 
     def create_fits_header_data(self, exposure, image_type):
@@ -223,13 +222,13 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
     def take_images(self):
         for flat in self.flats:
             wl_filter, e_per_pixel = flat.split()
-            exposure = self.compute_exposure_time(self.nd_filter, wl_filter, e_per_pixel)
-            print "exp %s filter %s,%s" % (exposure, wl_filter, self.nd_filter)
+            exposure = self.compute_exposure_time(self.slitwidth, wl_filter, e_per_pixel)
+            print "exp %s filter %s,%s" % (exposure, wl_filter, self.slitwidth)
             def expose_command():
                 if exposure>0:
                     bot_bench.openShutter(exposure) # Flat
                 bot_bench.openFe55Shutter(self.fe55exposure) # Fe55
-            self.set_filters(self.nd_filter, wl_filter)
+            self.set_filters(self.slitwidth, wl_filter)
             for i in range (self.fe55count):
                 self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
 
