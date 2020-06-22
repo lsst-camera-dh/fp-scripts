@@ -6,7 +6,7 @@ from ccs import proxies
 #import bot_bench
 import array
 
-fp = CCS.attachProxy("fp-3rebs")
+fp = CCS.attachProxy("ts8-fp")
 ts8bench = CCS.attachProxy("ts8-bench")
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
@@ -56,7 +56,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
 
 def rafts():
    #TODO: Should not be hardwired
-   return [fp.R10(), fp.R22() ]
+   return [ fp.R22() ]
 
 def rebs():
    result = []
