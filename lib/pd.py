@@ -148,7 +148,7 @@ class PhotodiodeReadout(object):
         logger.info("Photodiode about to be readout at %f",
                          time.time() - self.start_time)
         readTimeout = Duration.ofSeconds(1000)
-        result = bbsub.PhotoDiode().readBuffer( pd_filename)
+        result = bbsub.PhotoDiode().readBuffer( pd_filename, timeout=readTimeout)
         logger.info("Photodiode readout accumulation finished at %f",
                          time.time() - self.start_time)
 #        logger.info("Photodiode readout accumulation finished at %f, %s",
