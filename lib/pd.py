@@ -57,7 +57,6 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-
         if exptime > 0.5:
             self.nplc = 1.
         else:
@@ -96,7 +95,7 @@ class PhotodiodeReadout(object):
 #        bbsub.synchCommand(60, "clearPDbuff")
 #        bbsub.sendSynchCommand("resetPD")
         bbsub.PhotoDiode().reset()
-        bbsub.PhotoDiode().setCurrentRange(2e-8)
+        bbsub.PhotoDiode().setCurrentRange(2e-6)
         bbsub.PhotoDiode().clrbuff()
 #        bbsub.sendSynchCommand("clearPDbuff")
         logger.info("AVER settings are happening")

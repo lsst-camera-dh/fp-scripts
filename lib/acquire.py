@@ -116,8 +116,21 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
            raise Exception("Missing filter config file: %s" % self.filterConfigFile)
 
     def set_filters(self, slitwidth, wl_filter):
+        self.slitwidth = slitwidth
+        self.wl_filter = wl_filter
         bot_bench.setSlitWidth(slitwidth)
         bot_bench.setColorFilter(wl_filter)
+
+    def create_fits_header_data(self, exposure, image_type):
+        data = {'ExposureTime': exposure,
+		'TestType': self.test_type,
+		'ImageType': image_type,
+		'TestSeqNum': self.test_seq_num,
+		'Filter': self.wl_filter,
+		'SlitWidth': self.slitwidth }
+        if self.run:
+            data.update({'RunNumber': self.run})
+        return data
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
         if self.use_photodiodes:

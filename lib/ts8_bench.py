@@ -21,7 +21,7 @@ def setSlitWidth(filter):
 def setColorFilter(filter):
    sanityCheck()
    print "Setting color filter ",filter
-   bb.Monochromator().setWave(int(filter))
+   bb.Monochromator().setWaveAndFilter(int(filter))
 
 def setSpotFilter(filter):
    sanityCheck()
