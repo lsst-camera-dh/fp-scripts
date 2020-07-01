@@ -4,6 +4,7 @@ import StringIO
 import json
 import voltages
 import acquire
+import time
 
 def parseConfig(file):
   with open(file) as f:
@@ -21,15 +22,19 @@ def setvoltages(avoltage):
 def execute(config, command_line_options):
   try:
     items = config.options("VOLTAGES")
-    voltages = [ config.get("VOLTAGES",item) for item in items]
+    voltages = [ ( item, config.get("VOLTAGES",item) ) for item in items]
     print("VOLTAGES Block found. Acquisitions will be repeated on each settings")
   except:
     print("VOLTAGES Block not found.")
     voltages = [ None ]
 
-  for avoltage in voltages:
-    if avoltage is not None:
+  symlink = command_line_options["symlink"]
+  for args in voltages:
+    if args is not None:
+       alabel, avoltage = args
        setvoltages(avoltage)
+       time.sleep(30)	# wait a bit for getting settled
+       command_line_options["symlink"] = "/".join([symlink,alabel])
 
     items = config.options("ACQUIRE")
     for item in items:

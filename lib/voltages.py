@@ -21,7 +21,7 @@ def commandTarget( self, target ):
 setattr(proxies.ccsProxy, "commandTarget", commandTarget )
 
 def setvoltages(avoltage):
-	fp = CCS.attachProxy("fp-3rebs")
+	fp = CCS.attachProxy("ts8-fp")
 	for acommandtarget in avoltage:
 		fp.submitChanges(acommandtarget,avoltage[acommandtarget])
 		print(fp.getSubmittedChangesForComponent(acommandtarget))
