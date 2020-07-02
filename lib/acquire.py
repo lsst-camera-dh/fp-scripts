@@ -7,6 +7,8 @@ import fp
 #import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
+import jarray 
+from java.lang import String
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -340,19 +342,19 @@ class ScanTestCoordinator(TestCoordinator):
 
     def take_images(self):
         # set up scan mode
-        fp.sequencerConfig().submitChanges(
+        fp.fp.sequencerConfig().submitChanges(
 			{
 			"preCols":self.precols,
 			"readCols":self.readcols,
 			"postCols":self.postcols,
 			"overCols":0,
 			"preRows":self.prerows,
-			"peadRows":self.readrows,
-			"PostRows":self.postrows,
+			"readRows":self.readrows,
+			"postRows":self.postrows,
 			"scanMode":True
 			}
 		)
-        fp.commitBulkChange()
+        fp.fp.commitBulkChange()
 
 	exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -366,7 +368,7 @@ class ScanTestCoordinator(TestCoordinator):
 #           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.dropChangesForCategories("Sequencer")
+        fp.fp.dropChangesForCategories(jarray.array("Sequencer",String))
 
 #        fp.setTransparentMode(False)
 
