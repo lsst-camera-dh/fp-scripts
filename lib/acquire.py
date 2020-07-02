@@ -361,9 +361,9 @@ class ScanTestCoordinator(TestCoordinator):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
 #        fp.setTransparentMode(True)
-
-        for i in range(self.transparent):
-           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
+#
+#        for i in range(self.transparent):
+#           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
         fp.dropChangesForCategories("Sequencer")
