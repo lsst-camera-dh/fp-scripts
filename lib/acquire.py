@@ -340,6 +340,7 @@ class ScanTestCoordinator(TestCoordinator):
         self.prerows = options.getInt("prerows")
         self.readrows = options.getInt("readrows")
         self.postrows = options.getInt("postrows")
+        self.overrows = options.getInt("overrows")
         # TODO: Work about e2v sensors
 
     def take_images(self):
@@ -354,6 +355,7 @@ class ScanTestCoordinator(TestCoordinator):
 			"preRows":self.prerows,
 			"readRows":self.readrows,
 			"postRows":self.postrows,
+			"overRows":self.overrows,
 			"scanMode":True
 			}
 		)
