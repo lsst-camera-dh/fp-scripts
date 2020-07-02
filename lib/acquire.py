@@ -340,14 +340,19 @@ class ScanTestCoordinator(TestCoordinator):
 
     def take_images(self):
         # set up scan mode
-        fp.sequencerConfig().change("preCols",self.precols)
-        fp.sequencerConfig().change("readCols",self.readcols)
-        fp.sequencerConfig().change("postCols",self.postcols)
-        fp.sequencerConfig().change("overCols",0)
-        fp.sequencerConfig().change("preRows",self.prerows)
-        fp.sequencerConfig().change("peadRows",self.readrows)
-        fp.sequencerConfig().change("PostRows",self.postrows)
-        fp.sequencerConfig().change("scanMode",True)
+        fp.sequencerConfig().submitChanges(
+			{
+			"preCols":self.precols,
+			"readCols":self.readcols,
+			"postCols":self.postcols,
+			"overCols":0,
+			"preRows":self.prerows,
+			"peadRows":self.readrows,
+			"PostRows":self.postrows,
+			"scanMode":True
+			}
+		)
+        fp.commitBulkChange()
 
 	exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -361,7 +366,7 @@ class ScanTestCoordinator(TestCoordinator):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.dropChanges()
+        fp.dropChangesForCategories("Sequencer")
 
 #        fp.setTransparentMode(False)
 
