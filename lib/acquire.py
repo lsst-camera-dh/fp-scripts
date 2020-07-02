@@ -342,45 +342,29 @@ class ScanTestCoordinator(TestCoordinator):
         super(ScanTestCoordinator, self).__init__(options, 'SCAN', 'SCAN')
         self.transparent = options.getInt("n-transparent")
         self.scanmode = options.getInt("n-scanmode")
-        self.itl_precols = options.getInt("itl-precols")
-        self.itl_readcols = options.getInt("itl-readcols")
-        self.itl_postcols = options.getInt("itl-postcols")
-        self.itl_prerows = options.getInt("itl-prerows")
-        self.itl_readrows = options.getInt("itl-readrows")
-        self.itl_postrows = options.getInt("itl-postrows")
+        self.precols = options.getInt("precols")
+        self.readcols = options.getInt("readcols")
+        self.postcols = options.getInt("postcols")
+        self.prerows = options.getInt("prerows")
+        self.readrows = options.getInt("readrows")
+        self.postrows = options.getInt("postrows")
         # TODO: Work about e2v sensors
 
     def take_images(self):
-        preCols = fp.getSequencerParameter("PreCols")
-        readCols = fp.getSequencerParameter("ReadCols")
-        postCols = fp.getSequencerParameter("PostCols")
-        overCols = fp.getSequencerParameter("OverCols")
-        preRows = fp.getSequencerParameter("PreRows")
-        readRows = fp.getSequencerParameter("ReadRows")
-        postRows = fp.getSequencerParameter("PostRows")
-        scanMode = fp.isScanMode()
-	print "Initial sequencer parameters"
-        
-	print "preCols=%d"  % preCols
-	print "readCols=%d" % readCols
-	print "postCols=%d" % postCols
-	print "overCols=%d" % overCols
-
-	print "preRows=%d"  % preRows
-	print "readRows=%d" % readRows
-	print "postRows=%d" % postRows
-
-	print "scanMode=%s" % scanMode 
-
         # set up scan mode
-        fp.setSequencerParameter("PreCols",self.itl_precols)
-        fp.setSequencerParameter("ReadCols",self.itl_readcols)
-        fp.setSequencerParameter("PostCols",self.itl_postcols)
-        fp.setSequencerParameter("OverCols",0)
-        fp.setSequencerParameter("PreRows",self.itl_prerows)
-        fp.setSequencerParameter("ReadRows",self.itl_readrows)
-        fp.setSequencerParameter("PostRows",self.itl_postrows)
-        fp.setScanMode(True)
+        fp.sequencerConfig().submitChanges(
+			{
+			"preCols":self.precols,
+			"readCols":self.readcols,
+			"postCols":self.postcols,
+			"overCols":0,
+			"preRows":self.prerows,
+			"peadRows":self.readrows,
+			"PostRows":self.postrows,
+			"scanMode":True
+			}
+		)
+        fp.commitBulkChange()
 
 	exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -388,21 +372,15 @@ class ScanTestCoordinator(TestCoordinator):
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-        fp.setTransparentMode(True)
-
-        for i in range(self.transparent):
-           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
+#        fp.setTransparentMode(True)
+#
+#        for i in range(self.transparent):
+#           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.setSequencerParameter("PreCols",preCols)
-        fp.setSequencerParameter("ReadCols",readCols)
-        fp.setSequencerParameter("PostCols",postCols)
-        fp.setSequencerParameter("OverCols",overCols)
-        fp.setSequencerParameter("PreRows",preRows)
-        fp.setSequencerParameter("ReadRows",readRows)
-        fp.setSequencerParameter("PostRows",postRows)
-        fp.setScanMode(False)
-        fp.setTransparentMode(False)
+        fp.dropChangesForCategories("Sequencer")
+
+#        fp.setTransparentMode(False)
 
 
 def do_bias(options):
