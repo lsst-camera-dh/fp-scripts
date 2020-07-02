@@ -11,6 +11,7 @@ from ccs import proxies
 #import bot_bench
 import array
 import traceback
+from fp import fp
 
 def commandTarget( self, target ):
 	ccstarget = self
@@ -21,7 +22,7 @@ def commandTarget( self, target ):
 setattr(proxies.ccsProxy, "commandTarget", commandTarget )
 
 def setvoltages(avoltage):
-	fp = CCS.attachProxy("ts8-fp")
+#	fp = CCS.attachProxy("ts8-fp")
 	for acommandtarget in avoltage:
 		fp.submitChanges(acommandtarget,avoltage[acommandtarget])
 		print(fp.getSubmittedChangesForComponent(acommandtarget))
