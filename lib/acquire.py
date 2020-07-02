@@ -2,9 +2,9 @@ import os
 import time
 import config
 import fp
-import bot_bench
-import ccob
-import bot
+#import bot_bench
+#import ccob
+#import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 
