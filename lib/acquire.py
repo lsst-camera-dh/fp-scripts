@@ -344,6 +344,8 @@ class ScanTestCoordinator(TestCoordinator):
         super(ScanTestCoordinator, self).__init__(options, 'SCAN', 'SCAN')
         self.transparent = options.getInt("n-transparent")
         self.scanmode = options.getInt("n-scanmode")
+        self.undercols = options.getInt("undercols")
+        self.overcols = options.getInt("overcols")
         self.precols = options.getInt("precols")
         self.readcols = options.getInt("readcols")
         self.postcols = options.getInt("postcols")
@@ -356,10 +358,11 @@ class ScanTestCoordinator(TestCoordinator):
         # set up scan mode
         fp.fp.sequencerConfig().submitChanges(
 			{
+			"underCols":self.undercols,
 			"preCols":self.precols,
 			"readCols":self.readcols,
 			"postCols":self.postcols,
-			"overCols":0,
+			"overCols":self.overcols,
 			"preRows":self.prerows,
 			"readRows":self.readrows,
 			"postRows":self.postrows,
