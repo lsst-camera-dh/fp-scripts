@@ -361,14 +361,7 @@ class ScanTestCoordinator(TestCoordinator):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.sequencerConfig().change("preCols",-1)
-        fp.sequencerConfig().change("readCols",-1)
-        fp.sequencerConfig().change("postCols",-1)
-        fp.sequencerConfig().change("overCols",-1)
-        fp.sequencerConfig().change("preRows",-1)
-        fp.sequencerConfig().change("readRows",-1)
-        fp.sequencerConfig().change("postRows",-1)
-        fp.sequencerConfig().change("scanMode",False)
+        fp.dropChanges()
 
 #        fp.setTransparentMode(False)
 
