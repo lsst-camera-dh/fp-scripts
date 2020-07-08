@@ -134,7 +134,7 @@ class PhotodiodeReadout(object):
             logger.info("Photodiode checking that accumulation started at %f",
                          time.time() - self.start_time)
 
-    def write_readings(self, destination_spec, seqno, icount=1):
+    def write_readings(self, destination_spec, seqno, dtstr=datetime.date.today().strftime('%Y%m%d')):
         """
         Output the accumulated photodiode readings to a text file.
         """
@@ -142,11 +142,8 @@ class PhotodiodeReadout(object):
         self.destination = destination_spec
         logger.info("PD destination directory = %s",self.destination)
 
-        today = datetime.date.today()
-        dtstr = today.strftime('%Y%m%d')
-
         # make sure Photodiode readout has had enough time to run
-        pd_filename = os.path.join(self.destination,"Photodiode_Readings_%s_%d.txt" % (dtstr,seqno))
+        pd_filename = os.path.join(self.destination,"Photodiode_Readings_%s_%06d.txt" % (dtstr,seqno))
 
         print("The ultimate pd filename is ",pd_filename)
 
@@ -171,13 +168,13 @@ class PhotodiodeReadout(object):
 #            logger.info("Photodiode readout added to fits file %s",
 #                             fits_file)
 
-    def get_readings(self, fits_files, seqno, icount):
+    def get_readings(self, fits_files, seqno):
         """
         Output the accumulated photodiode readings to a text file and
         write that time history to the FITS files as a binary table
         extension.
         """
-        pd_filename = write_readings(seqno, icount)
+        pd_filename = write_readings(seqno)
         try:
             add_pd_time_history(fits_files, pd_filename)
         except TypeError:
