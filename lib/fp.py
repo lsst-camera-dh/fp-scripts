@@ -7,7 +7,6 @@ from ccs import proxies
 import array
 
 fp = CCS.attachProxy("ts8-fp")
-ts8bench = CCS.attachProxy("ts8-bench")
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
@@ -40,13 +39,11 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
    imageName = fp.startIntegration(annotation, locations)
-   ts8bench.Monochromator().openShutter()
    print "Image name: %s" % imageName
    if exposeCommand: 
       extraData = exposeCommand()
       if extraData:
           fp.setHeaderKeywords(extraData)
-   ts8bench.Monochromator().closeShutter()
    fp.endIntegration()
    if autoSave:
      return (imageName, fp.waitForFitsFiles(imageTimeout))
