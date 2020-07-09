@@ -2,13 +2,18 @@ import os
 import time
 import config
 import fp
-import ts8_bench as bot_bench
 #import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray 
 from java.lang import String
+bb = CCS.attachProxy("bot-bench")
+agentName = bb.getAgentProperty("agentName")
+if  agentName == "ts8-bench":
+    import ts8_bench as bot_bench
+elif agentName == "bot-bench":
+    import bot_bench
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''

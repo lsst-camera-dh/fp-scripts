@@ -24,7 +24,7 @@ if len(args)!=1:
   exit(1)
 
 #CCS.aliases = {'focal-plane': 'focal-plane-sim', 'bot-bench': 'bot-bench-sim'}
-#CCS.aliases = {'focal-plane': 'focal-plane-sim'}
+CCS.aliases = {'focal-plane': 'ts8-fp', 'bot-bench': 'ts8-bench' }
 #ccs_sub.write_versions()
 
 import config

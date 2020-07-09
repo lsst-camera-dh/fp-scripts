@@ -3,10 +3,9 @@ from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
-#import bot_bench
 import array
 
-fp = CCS.attachProxy("ts8-fp")
+fp = CCS.attachProxy("focal-plane")
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 

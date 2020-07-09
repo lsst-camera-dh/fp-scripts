@@ -8,7 +8,6 @@ from org.lsst.ccs.command import CommandInvocationException
 from org.lsst.ccs.bus.messages import EmbeddedObjectDeserializationException
 from java.time import Duration
 from ccs import proxies
-#import bot_bench
 import array
 import traceback
 from fp import fp
@@ -22,7 +21,6 @@ def commandTarget( self, target ):
 setattr(proxies.ccsProxy, "commandTarget", commandTarget )
 
 def setvoltages(avoltage):
-#	fp = CCS.attachProxy("ts8-fp")
 	for acommandtarget in avoltage:
 		fp.submitChanges(acommandtarget,avoltage[acommandtarget])
 		print(fp.getSubmittedChangesForComponent(acommandtarget))
@@ -32,7 +30,7 @@ def setvoltages(avoltage):
 
 if __name__ == "__main__":
 	try:
-		fp = CCS.attachProxy("fp-3rebs")
+		fp = CCS.attachProxy("focal-plane")
 		print(fp.commandTarget("R12/Reb0/Bias0").printConfigurableParameters().keys())
 		fp.submitChanges("R12/Reb0/Bias0",{ "csGateP": 0.0 })
 		print(fp.getSubmittedChangesForComponent("R12/Reb0/Bias0"))
