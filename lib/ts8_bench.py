@@ -4,6 +4,7 @@ from org.lsst.ccs.bus.states import AlertState
 from java.time import Duration
 from ccs import proxies
 import time
+import re
 
 bb = CCS.attachProxy("ts8-bench")
 
@@ -13,10 +14,10 @@ def sanityCheck():
    if alert!=AlertState.NOMINAL:
       print "WARNING: bot_bench subsystem is in alert state %s" % alert
 
-def setSlitWidth(filter):
+def setNDFilter(filter):
    sanityCheck()
    print "Setting SlitWidth",filter
-   bb.Monochromator().setSlitSize(1,int(filter))
+   bb.Monochromator().setSlitSize(2,int(re.match(r"slit(\d+)",filter).group(1)))
 
 def setColorFilter(filter):
    sanityCheck()
