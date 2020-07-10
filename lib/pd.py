@@ -10,6 +10,8 @@ from java.time import Duration
 from collections import namedtuple
 import logging
 import re
+import datetime
+
 try:
     import java.lang
 except ImportError:
@@ -17,7 +19,12 @@ except ImportError:
 from ccs_scripting_tools import CcsSubsystems, CCS
 #from ts8_utils import set_ccd_info, write_REB_info
 
-bbsub = CCS.attachProxy("ts8-bench")
+#bbsub = CCS.attachProxy("bot-bench")
+bbsub = CCS.attachProxy("bot-bench")
+## BELOW codes until pass was needed to live
+agentName = bbsub.getAgentProperty("agentName")
+if  agentName != "bot-bench":
+    bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 bbsub.PhotoDiode = bbsub.Monitor
 #pdsub = CCS.attachProxy("bot-bench/PhotoDiode")
 
@@ -94,10 +101,8 @@ class PhotodiodeReadout(object):
 #        bbsub.synchCommand(60, "resetPD")
 #        bbsub.synchCommand(60, "clearPDbuff")
 #        bbsub.sendSynchCommand("resetPD")
-        bbsub.PhotoDiode().reset()
-        bbsub.PhotoDiode().setCurrentRange(2e-6)
+        bbsub.PhotoDiode().setCurrentRange(2e-8)
         bbsub.PhotoDiode().clrbuff()
-#        bbsub.sendSynchCommand("clearPDbuff")
         logger.info("AVER settings are happening")
 	if self.navg != 1:
 		bbsub.PhotoDiode().send("AVER:COUNT %d" % self.navg)
@@ -132,7 +137,7 @@ class PhotodiodeReadout(object):
             logger.info("Photodiode checking that accumulation started at %f",
                          time.time() - self.start_time)
 
-    def write_readings(self, destination_spec, seqno, icount=1):
+    def write_readings(self, destination_spec, seqno, dtstr=datetime.date.today().strftime('%Y%m%d')):
         """
         Output the accumulated photodiode readings to a text file.
         """
@@ -141,7 +146,7 @@ class PhotodiodeReadout(object):
         logger.info("PD destination directory = %s",self.destination)
 
         # make sure Photodiode readout has had enough time to run
-        pd_filename = os.path.join(self.destination,"Photodiode_Readings.txt")
+        pd_filename = os.path.join(self.destination,"Photodiode_Readings_%s_%06d.txt" % (dtstr,seqno))
 
         print("The ultimate pd filename is ",pd_filename)
 
@@ -166,13 +171,13 @@ class PhotodiodeReadout(object):
 #            logger.info("Photodiode readout added to fits file %s",
 #                             fits_file)
 
-    def get_readings(self, fits_files, seqno, icount):
+    def get_readings(self, fits_files, seqno):
         """
         Output the accumulated photodiode readings to a text file and
         write that time history to the FITS files as a binary table
         extension.
         """
-        pd_filename = write_readings(seqno, icount)
+        pd_filename = write_readings(seqno)
         try:
             add_pd_time_history(fits_files, pd_filename)
         except TypeError:
