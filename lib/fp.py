@@ -1,11 +1,14 @@
 #!/usr/bin/env ccs-script
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
+from org.lsst.ccs.subsystem.focalplane.states import FocalPlaneState
+from org.lsst.ccs.subsystem.rafts.states import CCDsPowerState
 from java.time import Duration
 from ccs import proxies
+#import bot_bench
 import array
 
-fp = CCS.attachProxy("focal-plane")
+fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
@@ -20,11 +23,45 @@ def sanityCheck():
    if alert!=AlertState.NOMINAL:
       print "WARNING: focal-plane subsystem is in alert state %s" % alert 
 
+def startIdleFlush():
+   #
+   # no action if already in idle flushing
+   # starts on success
+   # lets the subsystem throw error otherwise 
+   #
+   state = fp.getState()
+   fpstate = state.getState(FocalPlaneState)
+   if fpstate == FocalPlaneState.IDLEFLUSH:
+      return
+   if fpstate != FocalPlaneState.QUIESCENT:
+      print "WARNING: ts8-fp subsystem is in state %s != QUIESCENT" % fpstate
+   fp.startIdleFlush()
+   return
+
+def endIdleFlush(n=1):
+   #
+   # no action if already in idle flushing
+   # starts on success
+   # lets the subsystem throw error otherwise 
+   #
+   state = fp.getState()
+   fpstate = state.getState(FocalPlaneState)
+   if fpstate == FocalPlaneState.QUIESCENT:  # silently accept
+      return
+   if fpstate != FocalPlaneState.IDLEFLUSH:
+      print "WARNING: ts8-fp subsystem is in state %s != IDLEFLUSH" % fpstate
+      return
+   fp.endIdleFlush(n)
+   fp.waitForSequencer(Duration.ofSeconds(2))
+   return
+
 def clear(n=1):
+   if n == 0:
+      return
+   endIdleFlush()
    print "Clearing CCDs (%d)" % n
-   fp.waitForSequencer(Duration.ofSeconds(10))
    fp.clear(n)
-   fp.waitForSequencer(Duration.ofSeconds(10))
+   fp.waitForSequencer(Duration.ofSeconds(2))
 
 def takeBias(fitsHeaderData, annotation=None, locations=None):
    # TODO: This may not be the best way to take bias images
@@ -34,6 +71,7 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
 
 def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None):
    sanityCheck()
+   endIdleFlush(0)
    clear()
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
