@@ -17,16 +17,14 @@ try:
 except ImportError:
     print("could not import java.lang")
 from ccs_scripting_tools import CcsSubsystems, CCS
-#from ts8_utils import set_ccd_info, write_REB_info
 
-#bbsub = CCS.attachProxy("bot-bench")
 bbsub = CCS.attachProxy("bot-bench")
 ## BELOW codes until pass was needed to live
 agentName = bbsub.getAgentProperty("agentName")
 if  agentName != "bot-bench":
     bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 bbsub.PhotoDiode = bbsub.Monitor
-#pdsub = CCS.attachProxy("bot-bench/PhotoDiode")
+
 
 __all__ = ["PhotodiodeReadout","logger"]
 
@@ -113,8 +111,7 @@ class PhotodiodeReadout(object):
 
         # start accummulating current readings
         logger.info("accumPDBuffer being called with self.nreads = %d and self.nplc = %f",self.nreads,self.nplc)
-#        pd_result = bbsub.asynchCommand("accumPDBuffer", self.nreads,
-#                                                    self.nplc, True)
+
         bbsub.PhotoDiode().setRate(self.nplc)
         pd_result = bbsub.PhotoDiode().accumBuffer(self.nreads,self.nplc)
         self.start_time = time.time()
@@ -125,9 +122,9 @@ class PhotodiodeReadout(object):
         while not running:
             time.sleep(0.25)
             try:
-#                running = bbsub.synchCommand(20, "isPDAccumInProgress").getResult()
+
                 running = bbsub.PhotoDiode().isAccumInProgress()
-#.getResult()
+
             except StandardError as eobj:
                 logger.info("PhotodiodeReadout.start_accumulation:")
                 logger.info(str(eobj))
@@ -137,7 +134,7 @@ class PhotodiodeReadout(object):
             logger.info("Photodiode checking that accumulation started at %f",
                          time.time() - self.start_time)
 
-    def write_readings(self, destination_spec, seqno, dtstr=datetime.date.today().strftime('%Y%m%d')):
+    def write_readings(self, destination_spec, seqno='000000', dtstr=datetime.date.today().strftime('%Y%m%d')):
         """
         Output the accumulated photodiode readings to a text file.
         """
@@ -146,7 +143,7 @@ class PhotodiodeReadout(object):
         logger.info("PD destination directory = %s",self.destination)
 
         # make sure Photodiode readout has had enough time to run
-        pd_filename = os.path.join(self.destination,"Photodiode_Readings_%s_%06d.txt" % (dtstr,seqno))
+        pd_filename = os.path.join(self.destination,"Photodiode_Readings_%s_%s.txt" % (dtstr,seqno))
 
         print("The ultimate pd filename is ",pd_filename)
 
@@ -156,32 +153,7 @@ class PhotodiodeReadout(object):
         result = bbsub.PhotoDiode().readBuffer( pd_filename, timeout=readTimeout)
         logger.info("Photodiode readout accumulation finished at %f",
                          time.time() - self.start_time)
-#        logger.info("Photodiode readout accumulation finished at %f, %s",
-#                         time.time() - self.start_time, result.getResult())
+
 
         return pd_filename
 
-# Not currently used ... to be removed once its inutility is confirmed
-    def add_pd_time_history(self, fits_files, pd_filename):
-        "Add the photodiode time history as an extension to the FITS files."
-        for fits_file in fits_files:
-            full_path = glob.glob('%s/*/%s' % (self.destination, fits_file))[0]
-#            command = "addBinaryTable %s %s AMP0.MEAS_TIMES AMP0_MEAS_TIMES AMP0_A_CURRENT %d" % (pd_filename, full_path, self.start_time)
-#            sub.ts8.synchCommand(200, command)
-#            logger.info("Photodiode readout added to fits file %s",
-#                             fits_file)
-
-    def get_readings(self, fits_files, seqno):
-        """
-        Output the accumulated photodiode readings to a text file and
-        write that time history to the FITS files as a binary table
-        extension.
-        """
-        pd_filename = write_readings(seqno)
-        try:
-            add_pd_time_history(fits_files, pd_filename)
-        except TypeError:
-            # We must be using a subsystem-proxy for the ts8
-            # subsystem.  TODO: Find a better way to handle the
-            # subsystem-proxy case.
-            pass
