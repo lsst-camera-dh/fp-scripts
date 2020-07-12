@@ -16,9 +16,6 @@ def parseConfig(file):
   config.readfp(StringIO.StringIO("".join(slines))) 
   return config
 
-def setvoltages(avoltage):
-  voltages.setvoltages(json.loads(avoltage))
-
 def execute(config, command_line_options):
   try:
     items = config.options("VOLTAGES")

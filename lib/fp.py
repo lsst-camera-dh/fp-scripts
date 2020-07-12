@@ -5,7 +5,7 @@ from org.lsst.ccs.subsystem.focalplane.states import FocalPlaneState
 from org.lsst.ccs.subsystem.rafts.states import CCDsPowerState
 from java.time import Duration
 from ccs import proxies
-#import bot_bench
+import bot_bench
 import array
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
