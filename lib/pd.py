@@ -19,12 +19,12 @@ except ImportError:
 from ccs_scripting_tools import CcsSubsystems, CCS
 
 bbsub = CCS.attachProxy("bot-bench")
-## BELOW codes until pass was needed to live
+##  The bleow 3 lines are needed for workaround.
 agentName = bbsub.getAgentProperty("agentName")
 if  agentName != "bot-bench":
     bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
-bbsub.PhotoDiode = bbsub.Monitor
-
+if  agentName == "ts8-bench":
+    bbsub.PhotoDiode = bbsub.Monitor
 
 __all__ = ["PhotodiodeReadout","logger"]
 
