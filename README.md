@@ -7,12 +7,17 @@ Current organization
 
 * lib/         -- Scripts intended to be on the CCS "jython path", so installed in ~/ccs/etc or /lsst/ccs/prod/etc
 * examples     -- Example configuration file
-* ts8-data.py  -- Example top-level script
+* bot-data.py  -- Example top-level script
 
 Can be run as
 
-ccs-script ts8-data.py examples/aaron.cfg    
+ccs-script bot-data.py examples/aaron.cfg    
 
 or if ccs-script is on your PATH
 
-./ts8-data.py examples/main.cfg
+./bot-data.py examples/main.cfg
+
+When one needs to change which subsystem talks to, the following line should be enabled
+```
+CCS.aliases = {'focal-plane': 'ts8-fp', 'bot-bench': 'ts8-bench' }
+```
