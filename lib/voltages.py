@@ -30,7 +30,6 @@ def setvoltages(avoltage):
 
 if __name__ == "__main__":
 	try:
-		fp = CCS.attachProxy("focal-plane")
 		print(fp.commandTarget("R12/Reb0/Bias0").printConfigurableParameters().keys())
 		fp.submitChanges("R12/Reb0/Bias0",{ "csGateP": 0.0 })
 		print(fp.getSubmittedChangesForComponent("R12/Reb0/Bias0"))
