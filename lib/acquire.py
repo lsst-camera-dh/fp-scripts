@@ -2,13 +2,21 @@ import os
 import time
 import config
 import fp
-import bot_bench
-import ccob
+#import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray 
 from java.lang import String
+from org.lsst.ccs.scripting import CCS
+from ccs import aliases
+from ccs import proxies
+bb = CCS.attachProxy("bot-bench")
+agentName = bb.getAgentProperty("agentName")
+if  agentName == "ts8-bench":
+    import ts8_bench as bot_bench
+elif agentName == "bot-bench":
+    import bot_bench
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -128,7 +136,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if self.use_photodiodes:
             # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
@@ -333,6 +341,7 @@ class ScanTestCoordinator(TestCoordinator):
         self.transparent = options.getInt("n-transparent")
         self.scanmode = options.getInt("n-scanmode")
         self.undercols = options.getInt("undercols")
+        self.overcols = options.getInt("overcols")
         self.precols = options.getInt("precols")
         self.readcols = options.getInt("readcols")
         self.postcols = options.getInt("postcols")

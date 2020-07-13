@@ -16,3 +16,8 @@ ccs-script bot-data.py examples/aaron.cfg
 or if ccs-script is on your PATH
 
 ./bot-data.py examples/main.cfg
+
+When one needs to change which subsystem talks to, the following line should be enabled
+```
+CCS.aliases = {'focal-plane': 'ts8-fp', 'bot-bench': 'ts8-bench' }
+```
