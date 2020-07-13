@@ -345,9 +345,11 @@ class ScanTestCoordinator(TestCoordinator):
         self.precols = options.getInt("precols")
         self.readcols = options.getInt("readcols")
         self.postcols = options.getInt("postcols")
+        self.overcols = options.getInt("overcols")
         self.prerows = options.getInt("prerows")
         self.readrows = options.getInt("readrows")
         self.postrows = options.getInt("postrows")
+        self.overrows = options.getInt("overrows")
         # TODO: Work about e2v sensors
 
     def take_images(self):
@@ -362,6 +364,7 @@ class ScanTestCoordinator(TestCoordinator):
 			"preRows":self.prerows,
 			"readRows":self.readrows,
 			"postRows":self.postrows,
+			"overRows":self.overrows,
 			"scanMode":True
 			}
 		)
@@ -373,15 +376,14 @@ class ScanTestCoordinator(TestCoordinator):
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-#        fp.setTransparentMode(True)
-#
-#        for i in range(self.transparent):
-#           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
+        fp.fp.transparentMode(1)
+        for i in range(self.transparent):
+           self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
         fp.fp.dropChangesForCategories(jarray.array("Sequencer",String))
 
-#        fp.setTransparentMode(False)
+        fp.fp.transparentMode(0)
 
 
 def do_bias(options):
