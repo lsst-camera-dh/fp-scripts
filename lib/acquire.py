@@ -2,11 +2,21 @@ import os
 import time
 import config
 import fp
-import bot_bench
-import ccob
+#import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
+import jarray 
+from java.lang import String
+from org.lsst.ccs.scripting import CCS
+from ccs import aliases
+from ccs import proxies
+bb = CCS.attachProxy("bot-bench")
+agentName = bb.getAgentProperty("agentName")
+if  agentName == "ts8-bench":
+    import ts8_bench as bot_bench
+elif agentName == "bot-bench":
+    import bot_bench
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -126,7 +136,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if self.use_photodiodes:
             # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
@@ -322,6 +332,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                     if self.exposure2 != 0.:
                         self.set_filter(self.mask2)
                         bot_bench.openShutter(self.exposure2)
+
                 for i in range(self.imcount):
                     self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.exposure1, self.exposure2))
 
@@ -331,45 +342,35 @@ class ScanTestCoordinator(TestCoordinator):
         super(ScanTestCoordinator, self).__init__(options, 'SCAN', 'SCAN')
         self.transparent = options.getInt("n-transparent")
         self.scanmode = options.getInt("n-scanmode")
-        self.itl_precols = options.getInt("itl-precols")
-        self.itl_readcols = options.getInt("itl-readcols")
-        self.itl_postcols = options.getInt("itl-postcols")
-        self.itl_prerows = options.getInt("itl-prerows")
-        self.itl_readrows = options.getInt("itl-readrows")
-        self.itl_postrows = options.getInt("itl-postrows")
+        self.undercols = options.getInt("undercols")
+        self.overcols = options.getInt("overcols")
+        self.precols = options.getInt("precols")
+        self.readcols = options.getInt("readcols")
+        self.postcols = options.getInt("postcols")
+        self.overcols = options.getInt("overcols")
+        self.prerows = options.getInt("prerows")
+        self.readrows = options.getInt("readrows")
+        self.postrows = options.getInt("postrows")
+        self.overrows = options.getInt("overrows")
         # TODO: Work about e2v sensors
 
     def take_images(self):
-        preCols = fp.getSequencerParameter("PreCols")
-        readCols = fp.getSequencerParameter("ReadCols")
-        postCols = fp.getSequencerParameter("PostCols")
-        overCols = fp.getSequencerParameter("OverCols")
-        preRows = fp.getSequencerParameter("PreRows")
-        readRows = fp.getSequencerParameter("ReadRows")
-        postRows = fp.getSequencerParameter("PostRows")
-        scanMode = fp.isScanMode()
-	print "Initial sequencer parameters"
-        
-	print "preCols=%d"  % preCols
-	print "readCols=%d" % readCols
-	print "postCols=%d" % postCols
-	print "overCols=%d" % overCols
-
-	print "preRows=%d"  % preRows
-	print "readRows=%d" % readRows
-	print "postRows=%d" % postRows
-
-	print "scanMode=%s" % scanMode 
-
         # set up scan mode
-        fp.setSequencerParameter("PreCols",self.itl_precols)
-        fp.setSequencerParameter("ReadCols",self.itl_readcols)
-        fp.setSequencerParameter("PostCols",self.itl_postcols)
-        fp.setSequencerParameter("OverCols",0)
-        fp.setSequencerParameter("PreRows",self.itl_prerows)
-        fp.setSequencerParameter("ReadRows",self.itl_readrows)
-        fp.setSequencerParameter("PostRows",self.itl_postrows)
-        fp.setScanMode(True)
+        fp.fp.sequencerConfig().submitChanges(
+			{
+			"underCols":self.undercols,
+			"preCols":self.precols,
+			"readCols":self.readcols,
+			"postCols":self.postcols,
+			"overCols":self.overcols,
+			"preRows":self.prerows,
+			"readRows":self.readrows,
+			"postRows":self.postrows,
+			"overRows":self.overrows,
+			"scanMode":True
+			}
+		)
+        fp.fp.commitBulkChange()
 
 	exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -377,21 +378,14 @@ class ScanTestCoordinator(TestCoordinator):
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-        fp.setTransparentMode(True)
-
+        fp.fp.transparentMode(1)
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.setSequencerParameter("PreCols",preCols)
-        fp.setSequencerParameter("ReadCols",readCols)
-        fp.setSequencerParameter("PostCols",postCols)
-        fp.setSequencerParameter("OverCols",overCols)
-        fp.setSequencerParameter("PreRows",preRows)
-        fp.setSequencerParameter("ReadRows",readRows)
-        fp.setSequencerParameter("PostRows",postRows)
-        fp.setScanMode(False)
-        fp.setTransparentMode(False)
+        fp.fp.dropChangesForCategories(jarray.array("Sequencer",String))
+
+        fp.fp.transparentMode(0)
 
 
 def do_bias(options):
