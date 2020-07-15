@@ -8,6 +8,9 @@ import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 
+# This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
+test_seq_num = 0
+
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
     def __init__(self, options, test_type, image_type):
@@ -15,7 +18,6 @@ class TestCoordinator(object):
         self.symlink = options['symlink']
         self.test_type = test_type
         self.image_type = image_type
-        self.test_seq_num = 0
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
 
@@ -27,7 +29,7 @@ class TestCoordinator(object):
             self.take_bias_image()
 
     def create_fits_header_data(self, exposure, image_type):
-        data = {'ExposureTime': exposure, 'TestType': self.test_type, 'ImageType': image_type, 'TestSeqNum': self.test_seq_num}
+        data = {'ExposureTime': exposure, 'TestType': self.test_type, 'ImageType': image_type, 'TestSeqNum': test_seq_num}
         if self.run:
             data.update({'RunNumber': self.run})
         return data
@@ -50,7 +52,7 @@ class TestCoordinator(object):
         fits_header_data = self.create_fits_header_data(exposure, image_type)
         image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
-        self.test_seq_num += 1
+        test_seq_num += 1
         return (image_name, file_list)
 
     def create_symlink(self, file_list, test_type, image_type):
@@ -61,7 +63,7 @@ class TestCoordinator(object):
             return
         print "Saved %d FITS files to %s" % (file_list.size(), file_list.getCommonParentDirectory())
         if self.symlink:
-            symname = "%s/%s_%s_%03d" % (self.symlink, test_type, image_type, self.test_seq_num)
+            symname = "%s/%s_%s_%03d" % (self.symlink, test_type, image_type, test_seq_num)
             if not os.path.exists(self.symlink):
                 os.makedirs(self.symlink)
             os.symlink(file_list.getCommonParentDirectory().toString(), symname)
@@ -126,7 +128,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if self.use_photodiodes:
             # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), test_seq_num)
         return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
@@ -348,7 +350,7 @@ class ScanTestCoordinator(TestCoordinator):
         postRows = fp.getSequencerParameter("PostRows")
         scanMode = fp.isScanMode()
 	print "Initial sequencer parameters"
-        
+
 	print "preCols=%d"  % preCols
 	print "readCols=%d" % readCols
 	print "postCols=%d" % postCols
@@ -358,7 +360,7 @@ class ScanTestCoordinator(TestCoordinator):
 	print "readRows=%d" % readRows
 	print "postRows=%d" % postRows
 
-	print "scanMode=%s" % scanMode 
+	print "scanMode=%s" % scanMode
 
         # set up scan mode
         fp.setSequencerParameter("PreCols",self.itl_precols)
@@ -447,4 +449,3 @@ def do_scan(options):
     print "scan called %s" % options
     tc = ScanTestCoordinator(options)
     tc.take_images()
-    
