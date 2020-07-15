@@ -303,7 +303,8 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         self.imcount = int(options.get('imcount', '1'))
         xoffset = float(options.get('xoffset'))
         yoffset = float(options.get('yoffset'))
-        self.mask = options.get('mask')
+        self.mask1 = options.get('mask1')
+        self.mask2 = options.get('mask2', 'empty6')
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
@@ -311,7 +312,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
     def create_fits_header_data(self, exposure, image_type):
         data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
         if image_type != 'BIAS':
-            data.update({'ExposureTime2': self.flatexposure})
+            data.update({'ExposureTime2': self.exposure2})
         return data
 
     def set_filter(self, mask_filter):
@@ -322,17 +323,18 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
             (x, y) = [float(x) for x in point.split()]
             bot.moveTo(x, y)
             for exposure in self.exposures:
-                (spotexposure, flatexposure) = exposure.split()
-                self.spotexposure = float(spotexposure)
-                self.flatexposure = float(flatexposure)
+                (exposure1, exposure2) = exposure.split()
+                self.exposure1 = float(exposure1)
+                self.exposure2 = float(exposure2)
                 def expose_command():
-                    self.set_filter(self.mask)
-                    bot_bench.openShutter(self.spotexposure) # spot mask
-                    self.set_filter('empty6') # empty1 was used for `grid'
-                    if self.flatexposure != 0.:
-                        bot_bench.openShutter(self.flatexposure) # flat
+                    self.set_filter(self.mask1)
+                    bot_bench.openShutter(self.exposure1)
+                    if self.exposure2 != 0.:
+                        self.set_filter(self.mask2)
+                        bot_bench.openShutter(self.exposure2)
+
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(self.spotexposure, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.spotexposure, self.flatexposure))
+                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):
     ''' A TestCoordinator for taking scan-mode images '''
