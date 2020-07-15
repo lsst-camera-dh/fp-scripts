@@ -376,14 +376,18 @@ class ScanTestCoordinator(TestCoordinator):
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-        fp.fp.transparentMode(1)
+        fp.fp.sequencerConfig().submitChanges(
+			{
+			"transparentMode": 1
+			}
+		)
+        fp.fp.commitBulkChange()
+
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
         fp.fp.dropChangesForCategories(jarray.array("Sequencer",String))
-
-        fp.fp.transparentMode(0)
 
 
 def do_bias(options):

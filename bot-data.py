@@ -1,5 +1,6 @@
 #!/usr/bin/env ccs-script
 import sys
+sys.path.insert(0,"/gpfs/slac/lsst/fs1/g/data/youtsumi/ts8/fp-scripts/lib")
 from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases

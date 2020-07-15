@@ -9,6 +9,9 @@ from ccs import proxies
 import array
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
+agentName = fp.getAgentProperty("agentName")
+if  agentName != "focal-plane":
+   fp = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 
