@@ -18,6 +18,7 @@ class TestCoordinator(object):
         self.test_seq_num = 0
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
+        self.clears = options.getInt('clears', 1)
 
     def take_images(self):
         pass
@@ -48,7 +49,7 @@ class TestCoordinator(object):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
         fits_header_data = self.create_fits_header_data(exposure, image_type)
-        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations)
+        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
         self.test_seq_num += 1
         return (image_name, file_list)
@@ -348,7 +349,7 @@ class ScanTestCoordinator(TestCoordinator):
         postRows = fp.getSequencerParameter("PostRows")
         scanMode = fp.isScanMode()
 	print "Initial sequencer parameters"
-        
+
 	print "preCols=%d"  % preCols
 	print "readCols=%d" % readCols
 	print "postCols=%d" % postCols
@@ -358,7 +359,7 @@ class ScanTestCoordinator(TestCoordinator):
 	print "readRows=%d" % readRows
 	print "postRows=%d" % postRows
 
-	print "scanMode=%s" % scanMode 
+	print "scanMode=%s" % scanMode
 
         # set up scan mode
         fp.setSequencerParameter("PreCols",self.itl_precols)
@@ -447,4 +448,3 @@ def do_scan(options):
     print "scan called %s" % options
     tc = ScanTestCoordinator(options)
     tc.take_images()
-    
