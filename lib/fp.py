@@ -7,6 +7,8 @@ from java.time import Duration
 from ccs import proxies
 #import bot_bench
 import array
+import re
+import os
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
 agentName = fp.getAgentProperty("agentName")
@@ -14,23 +16,27 @@ if  agentName != "focal-plane":
    fp = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
+symlinkToFast = True
+# These need to be changed when we switch R_and_D -> rawData
+symLinkFromLocation = "/gpfs/slac/lsst/fs3/g/data/R_and_D/focal-plane/"
+symLinkToLocation = "/gpfs/slac/lsst/fs3/g/fast/R_and_D/focal-plane/"
 
 def sanityCheck():
    # Was this ever implemented on focal-plane?
    #biasOn = fp.isBackBiasOn()
    #if not biasOn:
    #   print "WARNING: Back bias is not on"
-   
+
    state = fp.getState()
    alert = state.getState(AlertState)
    if alert!=AlertState.NOMINAL:
-      print "WARNING: focal-plane subsystem is in alert state %s" % alert 
+      print "WARNING: focal-plane subsystem is in alert state %s" % alert
 
 def startIdleFlush():
    #
    # no action if already in idle flushing
    # starts on success
-   # lets the subsystem throw error otherwise 
+   # lets the subsystem throw error otherwise
    #
    state = fp.getState()
    fpstate = state.getState(FocalPlaneState)
@@ -45,7 +51,7 @@ def endIdleFlush(n=1):
    #
    # no action if already in idle flushing
    # starts on success
-   # lets the subsystem throw error otherwise 
+   # lets the subsystem throw error otherwise
    #
    state = fp.getState()
    fpstate = state.getState(FocalPlaneState)
@@ -70,7 +76,7 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
    # TODO: This may not be the best way to take bias images
    # It may be better to define a takeBias command at the subsystem layer, since
    # this could skip the startIntegration/endIntegration and got straigh to readout
-   return takeExposure(fitsHeaderData=fitsHeaderData, annotation=annotation, locations=locations)    
+   return takeExposure(fitsHeaderData=fitsHeaderData, annotation=annotation, locations=locations)
 
 def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None):
    sanityCheck()
@@ -80,7 +86,18 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    fp.setHeaderKeywords(fitsHeaderData)
    imageName = fp.startIntegration(annotation, locations)
    print "Image name: %s" % imageName
-   if exposeCommand: 
+
+   # Horrible fix for using "fast" gpfs disk at SLAC
+   # Note, the paths here are hardwired above, and must be fixed if imagehandling config is changed
+   if symlinkToFast:
+      date = re.sub(r".._._(........)_......", r"\1", imageName)
+      oldLocation = symLinkFromLocation+date+"/"
+      newLocation = symLinkToLocation+date+"/"+imageName
+      os.mkdirs(oldLocation)
+      os.mkdirs(newLocation)
+      os.symlink(newLocation, oldLocation+imageName)
+
+   if exposeCommand:
       extraData = exposeCommand()
       if extraData:
           fp.setHeaderKeywords(extraData)
@@ -89,7 +106,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
      return (imageName, fp.waitForFitsFiles(imageTimeout))
    else:
      fp.waitForImages(imageTimeout)
-     return (imageName, None)      
+     return (imageName, None)
 
 def rafts():
    #TODO: Should not be hardwired
@@ -134,7 +151,7 @@ def isScanMode():
 
 def setScanMode(value):
    for reb in rebs():
-      reb.setRegister(0x330000, array.array('i',[1] if value else [0])) 
+      reb.setRegister(0x330000, array.array('i',[1] if value else [0]))
 
 def isTransparentMode():
    result = []
@@ -143,9 +160,8 @@ def isTransparentMode():
    unique = set(result)
    if len(unique)!=1:
       raise "Inconsistent transparent mode "+result
-   return unique.pop()   
+   return unique.pop()
 
 def setTransparentMode(value):
    for aspic in aspics():
-      aspic.change("tm",  1 if value else 0)      
-   
+      aspic.change("tm",  1 if value else 0)
