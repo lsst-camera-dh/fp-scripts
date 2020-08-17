@@ -18,6 +18,9 @@ if  agentName == "ts8-bench":
 elif agentName == "bot-bench":
     import bot_bench
 
+# This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
+test_seq_num = 0
+
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
     def __init__(self, options, test_type, image_type):
@@ -25,7 +28,6 @@ class TestCoordinator(object):
         self.symlink = options['symlink']
         self.test_type = test_type
         self.image_type = image_type
-        self.test_seq_num = 0
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
 
@@ -37,7 +39,7 @@ class TestCoordinator(object):
             self.take_bias_image()
 
     def create_fits_header_data(self, exposure, image_type):
-        data = {'ExposureTime': exposure, 'TestType': self.test_type, 'ImageType': image_type, 'TestSeqNum': self.test_seq_num}
+        data = {'ExposureTime': exposure, 'TestType': self.test_type, 'ImageType': image_type, 'TestSeqNum': test_seq_num}
         if self.run:
             data.update({'RunNumber': self.run})
         return data
@@ -60,7 +62,7 @@ class TestCoordinator(object):
         fits_header_data = self.create_fits_header_data(exposure, image_type)
         image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
-        self.test_seq_num += 1
+        test_seq_num += 1
         return (image_name, file_list)
 
     def create_symlink(self, file_list, test_type, image_type):
@@ -71,7 +73,7 @@ class TestCoordinator(object):
             return
         print "Saved %d FITS files to %s" % (file_list.size(), file_list.getCommonParentDirectory())
         if self.symlink:
-            symname = "%s/%s_%s_%03d" % (self.symlink, test_type, image_type, self.test_seq_num)
+            symname = "%s/%s_%s_%03d" % (self.symlink, test_type, image_type, test_seq_num)
             if not os.path.exists(self.symlink):
                 os.makedirs(self.symlink)
             os.symlink(file_list.getCommonParentDirectory().toString(), symname)
@@ -355,6 +357,27 @@ class ScanTestCoordinator(TestCoordinator):
         # TODO: Work about e2v sensors
 
     def take_images(self):
+        preCols = fp.getSequencerParameter("PreCols")
+        readCols = fp.getSequencerParameter("ReadCols")
+        postCols = fp.getSequencerParameter("PostCols")
+        overCols = fp.getSequencerParameter("OverCols")
+        preRows = fp.getSequencerParameter("PreRows")
+        readRows = fp.getSequencerParameter("ReadRows")
+        postRows = fp.getSequencerParameter("PostRows")
+        scanMode = fp.isScanMode()
+	print "Initial sequencer parameters"
+
+	print "preCols=%d"  % preCols
+	print "readCols=%d" % readCols
+	print "postCols=%d" % postCols
+	print "overCols=%d" % overCols
+
+	print "preRows=%d"  % preRows
+	print "readRows=%d" % readRows
+	print "postRows=%d" % postRows
+
+	print "scanMode=%s" % scanMode
+
         # set up scan mode
         fp.fp.sequencerConfig().submitChanges(
 			{
@@ -446,4 +469,3 @@ def do_scan(options):
     print "scan called %s" % options
     tc = ScanTestCoordinator(options)
     tc.take_images()
-    
