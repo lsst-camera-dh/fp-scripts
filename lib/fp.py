@@ -7,7 +7,6 @@ from java.time import Duration
 from ccs import proxies
 #import bot_bench
 import array
-import re
 import os
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
@@ -90,12 +89,14 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    # Horrible fix for using "fast" gpfs disk at SLAC
    # Note, the paths here are hardwired above, and must be fixed if imagehandling config is changed
    if symlinkToFast:
-      date = re.sub(r".._._(........)_......", r"\1", imageName)
+      date = imageName.dateString
       oldLocation = symLinkFromLocation+date+"/"
-      newLocation = symLinkToLocation+date+"/"+imageName
-      os.mkdirs(oldLocation)
-      os.mkdirs(newLocation)
-      os.symlink(newLocation, oldLocation+imageName)
+      newLocation = symLinkToLocation+date+"/"+imageName.toString()
+      if not os.path.exists(oldLocation):
+         os.makedirs(oldLocation)
+      if not os.path.exists(newLocation):
+         os.makedirs(newLocation)
+      os.symlink(newLocation, oldLocation+imageName.toString())
 
    if exposeCommand:
       extraData = exposeCommand()
