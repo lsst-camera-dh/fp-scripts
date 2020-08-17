@@ -77,10 +77,10 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
    # this could skip the startIntegration/endIntegration and got straigh to readout
    return takeExposure(fitsHeaderData=fitsHeaderData, annotation=annotation, locations=locations)
 
-def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None):
+def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1):
    sanityCheck()
    endIdleFlush(0)
-   clear()
+   clear(clears)
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
    imageName = fp.startIntegration(annotation, locations)

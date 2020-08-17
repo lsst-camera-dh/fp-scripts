@@ -30,6 +30,7 @@ class TestCoordinator(object):
         self.image_type = image_type
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
+        self.clears = options.getInt('clears', 1)
 
     def take_images(self):
         pass
@@ -60,7 +61,7 @@ class TestCoordinator(object):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
         fits_header_data = self.create_fits_header_data(exposure, image_type)
-        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations)
+        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
         test_seq_num += 1
         return (image_name, file_list)
