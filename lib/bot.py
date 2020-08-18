@@ -10,7 +10,7 @@ try:
   bot = CCS.attachProxy("bot-motorplatform")
 except:
   print "BOT subsystem not available, attempting to continue"
-  raise
+#  raise
 
 def sanityCheck():
    state = bot.getState()

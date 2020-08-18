@@ -2,11 +2,24 @@ import os
 import time
 import config
 import fp
-import bot_bench
-import ccob
+#import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
+import jarray 
+from java.lang import String
+from org.lsst.ccs.scripting import CCS
+from ccs import aliases
+from ccs import proxies
+bb = CCS.attachProxy("bot-bench")
+agentName = bb.getAgentProperty("agentName")
+if  agentName == "ts8-bench":
+    import ts8_bench as bot_bench
+elif agentName == "bot-bench":
+    import bot_bench
+
+# This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
+test_seq_num = 0
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -15,9 +28,9 @@ class TestCoordinator(object):
         self.symlink = options['symlink']
         self.test_type = test_type
         self.image_type = image_type
-        self.test_seq_num = 0
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
+        self.clears = options.getInt('clears', 1)
 
     def take_images(self):
         pass
@@ -27,7 +40,7 @@ class TestCoordinator(object):
             self.take_bias_image()
 
     def create_fits_header_data(self, exposure, image_type):
-        data = {'ExposureTime': exposure, 'TestType': self.test_type, 'ImageType': image_type, 'TestSeqNum': self.test_seq_num}
+        data = {'ExposureTime': exposure, 'TestType': self.test_type, 'ImageType': image_type, 'TestSeqNum': test_seq_num}
         if self.run:
             data.update({'RunNumber': self.run})
         return data
@@ -48,9 +61,10 @@ class TestCoordinator(object):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
         fits_header_data = self.create_fits_header_data(exposure, image_type)
-        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations)
+        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
-        self.test_seq_num += 1
+        global test_seq_num
+        test_seq_num = test_seq_num + 1
         return (image_name, file_list)
 
     def create_symlink(self, file_list, test_type, image_type):
@@ -61,7 +75,7 @@ class TestCoordinator(object):
             return
         print "Saved %d FITS files to %s" % (file_list.size(), file_list.getCommonParentDirectory())
         if self.symlink:
-            symname = "%s/%s_%s_%03d" % (self.symlink, test_type, image_type, self.test_seq_num)
+            symname = "%s/%s_%s_%03d" % (self.symlink, test_type, image_type, test_seq_num)
             if not os.path.exists(self.symlink):
                 os.makedirs(self.symlink)
             os.symlink(file_list.getCommonParentDirectory().toString(), symname)
@@ -126,7 +140,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if self.use_photodiodes:
             # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(), self.test_seq_num)
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
     def compute_exposure_time(self, nd_filter, wl_filter, e_per_pixel):
@@ -293,7 +307,8 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         self.imcount = int(options.get('imcount', '1'))
         xoffset = float(options.get('xoffset'))
         yoffset = float(options.get('yoffset'))
-        self.mask = options.get('mask')
+        self.mask1 = options.get('mask1')
+        self.mask2 = options.get('mask2', 'empty6')
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
@@ -301,7 +316,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
     def create_fits_header_data(self, exposure, image_type):
         data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
         if image_type != 'BIAS':
-            data.update({'ExposureTime2': self.flatexposure})
+            data.update({'ExposureTime2': self.exposure2})
         return data
 
     def set_filter(self, mask_filter):
@@ -312,17 +327,18 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
             (x, y) = [float(x) for x in point.split()]
             bot.moveTo(x, y)
             for exposure in self.exposures:
-                (spotexposure, flatexposure) = exposure.split()
-                self.spotexposure = float(spotexposure)
-                self.flatexposure = float(flatexposure)
+                (exposure1, exposure2) = exposure.split()
+                self.exposure1 = float(exposure1)
+                self.exposure2 = float(exposure2)
                 def expose_command():
-                    self.set_filter(self.mask)
-                    bot_bench.openShutter(self.spotexposure) # spot mask
-                    self.set_filter('empty6') # empty1 was used for `grid'
-                    if self.flatexposure != 0.:
-                        bot_bench.openShutter(self.flatexposure) # flat
+                    self.set_filter(self.mask1)
+                    bot_bench.openShutter(self.exposure1)
+                    if self.exposure2 != 0.:
+                        self.set_filter(self.mask2)
+                        bot_bench.openShutter(self.exposure2)
+
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(self.spotexposure, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.spotexposure, self.flatexposure))
+                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):
     ''' A TestCoordinator for taking scan-mode images '''
@@ -330,12 +346,16 @@ class ScanTestCoordinator(TestCoordinator):
         super(ScanTestCoordinator, self).__init__(options, 'SCAN', 'SCAN')
         self.transparent = options.getInt("n-transparent")
         self.scanmode = options.getInt("n-scanmode")
-        self.itl_precols = options.getInt("itl-precols")
-        self.itl_readcols = options.getInt("itl-readcols")
-        self.itl_postcols = options.getInt("itl-postcols")
-        self.itl_prerows = options.getInt("itl-prerows")
-        self.itl_readrows = options.getInt("itl-readrows")
-        self.itl_postrows = options.getInt("itl-postrows")
+        self.undercols = options.getInt("undercols")
+        self.overcols = options.getInt("overcols")
+        self.precols = options.getInt("precols")
+        self.readcols = options.getInt("readcols")
+        self.postcols = options.getInt("postcols")
+        self.overcols = options.getInt("overcols")
+        self.prerows = options.getInt("prerows")
+        self.readrows = options.getInt("readrows")
+        self.postrows = options.getInt("postrows")
+        self.overrows = options.getInt("overrows")
         # TODO: Work about e2v sensors
 
     def take_images(self):
@@ -348,7 +368,7 @@ class ScanTestCoordinator(TestCoordinator):
         postRows = fp.getSequencerParameter("PostRows")
         scanMode = fp.isScanMode()
 	print "Initial sequencer parameters"
-        
+
 	print "preCols=%d"  % preCols
 	print "readCols=%d" % readCols
 	print "postCols=%d" % postCols
@@ -358,17 +378,24 @@ class ScanTestCoordinator(TestCoordinator):
 	print "readRows=%d" % readRows
 	print "postRows=%d" % postRows
 
-	print "scanMode=%s" % scanMode 
+	print "scanMode=%s" % scanMode
 
         # set up scan mode
-        fp.setSequencerParameter("PreCols",self.itl_precols)
-        fp.setSequencerParameter("ReadCols",self.itl_readcols)
-        fp.setSequencerParameter("PostCols",self.itl_postcols)
-        fp.setSequencerParameter("OverCols",0)
-        fp.setSequencerParameter("PreRows",self.itl_prerows)
-        fp.setSequencerParameter("ReadRows",self.itl_readrows)
-        fp.setSequencerParameter("PostRows",self.itl_postrows)
-        fp.setScanMode(True)
+        fp.fp.sequencerConfig().submitChanges(
+			{
+			"underCols":self.undercols,
+			"preCols":self.precols,
+			"readCols":self.readcols,
+			"postCols":self.postcols,
+			"overCols":self.overcols,
+			"preRows":self.prerows,
+			"readRows":self.readrows,
+			"postRows":self.postrows,
+			"overRows":self.overrows,
+			"scanMode":True
+			}
+		)
+        fp.fp.commitBulkChange()
 
 	exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -376,21 +403,18 @@ class ScanTestCoordinator(TestCoordinator):
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-        fp.setTransparentMode(True)
+        fp.fp.sequencerConfig().submitChanges(
+			{
+			"transparentMode": 1
+			}
+		)
+        fp.fp.commitBulkChange()
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.setSequencerParameter("PreCols",preCols)
-        fp.setSequencerParameter("ReadCols",readCols)
-        fp.setSequencerParameter("PostCols",postCols)
-        fp.setSequencerParameter("OverCols",overCols)
-        fp.setSequencerParameter("PreRows",preRows)
-        fp.setSequencerParameter("ReadRows",readRows)
-        fp.setSequencerParameter("PostRows",postRows)
-        fp.setScanMode(False)
-        fp.setTransparentMode(False)
+        fp.fp.dropChangesForCategories(jarray.array("Sequencer",String))
 
 
 def do_bias(options):
@@ -447,4 +471,3 @@ def do_scan(options):
     print "scan called %s" % options
     tc = ScanTestCoordinator(options)
     tc.take_images()
-    
