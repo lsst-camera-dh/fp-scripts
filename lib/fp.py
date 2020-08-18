@@ -2,7 +2,6 @@
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from org.lsst.ccs.subsystem.focalplane.states import FocalPlaneState
-from org.lsst.ccs.subsystem.rafts.states import CCDsPowerState
 from java.time import Duration
 from ccs import proxies
 #import bot_bench

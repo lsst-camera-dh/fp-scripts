@@ -63,7 +63,8 @@ class TestCoordinator(object):
         fits_header_data = self.create_fits_header_data(exposure, image_type)
         image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
         self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
-        test_seq_num += 1
+        global test_seq_num
+        test_seq_num = test_seq_num + 1
         return (image_name, file_list)
 
     def create_symlink(self, file_list, test_type, image_type):
