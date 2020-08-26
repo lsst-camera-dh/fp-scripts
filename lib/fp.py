@@ -16,8 +16,8 @@ autoSave = True
 imageTimeout = Duration.ofSeconds(60)
 symlinkToFast = True
 # These need to be changed when we switch R_and_D -> rawData
-symLinkFromLocation = "/gpfs/slac/lsst/fs3/g/data/R_and_D/focal-plane/"
-symLinkToLocation = "/gpfs/slac/lsst/fs3/g/fast/R_and_D/focal-plane/"
+symLinkFromLocation = "/gpfs/slac/lsst/fs3/g/data/rawData/focal-plane/"
+symLinkToLocation = "/gpfs/slac/lsst/fs3/g/fast/rawData/focal-plane/"
 
 def sanityCheck():
    # Was this ever implemented on focal-plane?
@@ -38,7 +38,7 @@ def startIdleFlush():
    #
    state = fp.getState()
    fpstate = state.getState(FocalPlaneState)
-   if fpstate == FocalPlaneState.IDLEFLUSH:
+   if fpstate == FocalPlaneState.IDLE_FLUSH:
       return
    if fpstate != FocalPlaneState.QUIESCENT:
       print "WARNING: ts8-fp subsystem is in state %s != QUIESCENT" % fpstate
@@ -55,8 +55,8 @@ def endIdleFlush(n=1):
    fpstate = state.getState(FocalPlaneState)
    if fpstate == FocalPlaneState.QUIESCENT:  # silently accept
       return
-   if fpstate != FocalPlaneState.IDLEFLUSH:
-      print "WARNING: ts8-fp subsystem is in state %s != IDLEFLUSH" % fpstate
+   if fpstate != FocalPlaneState.IDLE_FLUSH:
+      print "WARNING: ts8-fp subsystem is in state %s != IDLE_FLUSH" % fpstate
       return
    fp.endIdleFlush(n)
    fp.waitForSequencer(Duration.ofSeconds(2))
