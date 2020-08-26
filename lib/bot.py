@@ -38,6 +38,7 @@ def moveTo(x=0, y=0):
    bot.disable("Y")
    
 def waitForMove():
+   time.sleep(1)
    ll = LampListener()
    startListener(ll)
    while ll.isMoving:
