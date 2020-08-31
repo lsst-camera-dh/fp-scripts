@@ -28,7 +28,7 @@ def sanityCheck():
    state = fp.getState()
    alert = state.getState(AlertState)
    if alert!=AlertState.NOMINAL:
-      print "WARNING: focal-plane subsystem is in alert state %s" % alert
+      print "WARNING: %s subsystem is in alert state %s" % ( agentName, alert )
 
 def startIdleFlush():
    #
@@ -41,7 +41,7 @@ def startIdleFlush():
    if fpstate == FocalPlaneState.IDLE_FLUSH:
       return
    if fpstate != FocalPlaneState.QUIESCENT:
-      print "WARNING: ts8-fp subsystem is in state %s != QUIESCENT" % fpstate
+      print "WARNING: %s subsystem is in state %s != QUIESCENT" % ( agentName, fpstate )
    fp.startIdleFlush()
    return
 
