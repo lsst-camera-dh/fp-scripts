@@ -56,7 +56,7 @@ def endIdleFlush(n=1):
    if fpstate == FocalPlaneState.QUIESCENT:  # silently accept
       return
    if fpstate != FocalPlaneState.IDLE_FLUSH:
-      print "WARNING: ts8-fp subsystem is in state %s != IDLE_FLUSH" % fpstate
+      print "WARNING: %s subsystem is in state %s != IDLE_FLUSH" % ( agentName, fpstate )
       return
    fp.endIdleFlush(n)
    fp.waitForSequencer(Duration.ofSeconds(2))
