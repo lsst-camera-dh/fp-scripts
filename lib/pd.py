@@ -113,7 +113,7 @@ class PhotodiodeReadout(object):
         logger.info("accumPDBuffer being called with self.nreads = %d and self.nplc = %f",self.nreads,self.nplc)
 
         bbsub.PhotoDiode().setRate(self.nplc)
-        pd_result = bbsub.PhotoDiode().accumBuffer(self.nreads,self.nplc)
+        pd_result = bbsub.PhotoDiode().accumBuffer(self.nreads,self.nplc*self.navg)
         self.start_time = time.time()
         logger.info("Photodiode readout accumulation started at %f",
                          self.start_time)
