@@ -11,6 +11,7 @@ from java.lang import String
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
+from java.time import Duration
 bb = CCS.attachProxy("bot-bench")
 agentName = bb.getAgentProperty("agentName")
 if  agentName == "ts8-bench":
@@ -359,43 +360,44 @@ class ScanTestCoordinator(TestCoordinator):
         # TODO: Work about e2v sensors
 
     def take_images(self):
-        preCols = fp.getSequencerParameter("PreCols")
-        readCols = fp.getSequencerParameter("ReadCols")
-        postCols = fp.getSequencerParameter("PostCols")
-        overCols = fp.getSequencerParameter("OverCols")
-        preRows = fp.getSequencerParameter("PreRows")
-        readRows = fp.getSequencerParameter("ReadRows")
-        postRows = fp.getSequencerParameter("PostRows")
-        scanMode = fp.isScanMode()
+        preCols = fp.fp.getSequencerParameter("PreCols")
+        readCols = fp.fp.getSequencerParameter("ReadCols")
+        postCols = fp.fp.getSequencerParameter("PostCols")
+        overCols = fp.fp.getSequencerParameter("OverCols")
+        preRows = fp.fp.getSequencerParameter("PreRows")
+        readRows = fp.fp.getSequencerParameter("ReadRows")
+        postRows = fp.fp.getSequencerParameter("PostRows")
+        scanMode = fp.fp.isScanEnabled()
 	print "Initial sequencer parameters"
 
-	print "preCols=%d"  % preCols
-	print "readCols=%d" % readCols
-	print "postCols=%d" % postCols
-	print "overCols=%d" % overCols
+	print "preCols="  , preCols
+	print "readCols=" , readCols
+	print "postCols=" , postCols
+	print "overCols=" , overCols
 
-	print "preRows=%d"  % preRows
-	print "readRows=%d" % readRows
-	print "postRows=%d" % postRows
+	print "preRows="  , preRows
+	print "readRows=" , readRows
+	print "postRows=" , postRows
 
-	print "scanMode=%s" % scanMode
+	print "scanMode=" , scanMode
 
         # set up scan mode
         fp.fp.sequencerConfig().submitChanges(
 			{
 			"underCols":self.undercols,
-			"preCols":self.precols,
-			"readCols":self.readcols,
-			"postCols":self.postcols,
-			"overCols":self.overcols,
-			"preRows":self.prerows,
-			"readRows":self.readrows,
-			"postRows":self.postrows,
-			"overRows":self.overrows,
-			"scanMode":True
+			"preCols":  self.precols,
+			"readCols": self.readcols,
+			"postCols": self.postcols,
+			"overCols": self.overcols,
+			"preRows":  self.prerows,
+			"readRows": self.readrows,
+			"postRows": self.postrows,
+			"overRows": self.overrows,
+			"scanMode": True
 			}
 		)
         fp.fp.commitBulkChange()
+
 
 	exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -403,18 +405,20 @@ class ScanTestCoordinator(TestCoordinator):
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
+
         fp.fp.sequencerConfig().submitChanges(
 			{
 			"transparentMode": 1
 			}
 		)
-        fp.fp.commitBulkChange()
+        timeout= Duration.ofSeconds(60*5)
+        fp.fp.commitBulkChange(timeout=timeout)
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.fp.dropChangesForCategories(jarray.array("Sequencer",String))
+        fp.fp.dropAllChanges()
 
 
 def do_bias(options):
