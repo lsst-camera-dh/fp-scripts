@@ -229,10 +229,10 @@ class PersistenceTestCoordinator(FlatFieldTestCoordinator):
         self.persistence= options.getList('persistence')
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        e_per_pixel, nd_filter, n_of_dark, exp_of_dark, t_btw_darks= self.persistence.split()
+        e_per_pixel, n_of_dark, exp_of_dark, t_btw_darks= self.persistence.split()
         e_per_pixel = float(e_per_pixel)
-        exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
-        self.set_filters(nd_filter, wl_filter)
+        exposure = self.compute_exposure_time(self.nd_filter, self.wl_filter, e_per_pixel)
+        self.set_filters(self.nd_filter, self.wl_filter)
 
         # bias acquisitions
         self.take_bias_image(self.bcount)
