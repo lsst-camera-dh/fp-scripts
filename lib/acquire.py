@@ -476,7 +476,8 @@ def do_fe55(options):
 
 def do_persistence(options):
     #TODO: Implement this
-    print "persistence called %s" % options
+    tc = PersistenceTestCoordinator(options)
+    tc.take_images()
 
 def do_sflat(options):
     print "superflat called %s" % options
