@@ -240,14 +240,14 @@ class PersistenceTestCoordinator(FlatFieldTestCoordinator):
         if self.use_photodiodes:
             pd_readout = PhotodiodeReadout(exposure)
             pd_readout.start_accumulation()
-        image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
+        image_name, file_list = super(PersistenceTestCoordinator, self).take_image(exposure, expose_command, "FLAT", symlink_image_type)
         if self.use_photodiodes:
             # TODO: Why does this need the last argument - in fact it is not used?
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
 
         # dark acquisition
         for i in range(int(n_of_dark)):
-            self.take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
+            super(PersistenceTestCoordinator, self).take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
             time.sleep(float(t_btw_darks))
         return (image_name, file_list)
 
