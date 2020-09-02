@@ -225,6 +225,7 @@ class PersistenceTestCoordinator(FlatFieldTestCoordinator):
         super(PersistenceTestCoordinator, self).__init__(options, "BOT_PERSISTENCE", "FLAT")
         self.bcount = options.getInt('bcount', 10)
         self.wl_filter = options.get('wl')
+        self.nd_filter= options.get('nd')
         self.persistence= options.getList('persistence')
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
