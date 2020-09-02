@@ -219,6 +219,38 @@ class LambdaTestCoordinator(FlatFieldTestCoordinator):
             self.set_filters(nd_filter, wl_filter)
             self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s' % (wl_filter, e_per_pixel))
 
+class PersistenceTestCoordinator(FlatFieldTestCoordinator):
+    ''' A TestCoordinator for all tests that involve taking persitence with the flat field generator '''
+    def __init__(self, options, test_type, image_type):
+        super(PersistenceTestCoordinator, self).__init__(options, "BOT_PERSISTENCE", "FLAT")
+        self.bcount = options.getInt('bcount', 10)
+        self.wl_filter = options.get('wl')
+        self.persistence= options.getList('persistence')
+
+    def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
+        e_per_pixel, nd_filter, n_of_dark, exp_of_dark, t_btw_darks= self.persistence.split()
+        e_per_pixel = float(e_per_pixel)
+        exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
+        self.set_filters(nd_filter, wl_filter)
+
+        # bias acquisitions
+        self.take_bias_image(self.bcount)
+
+        # dark acquisition
+        if self.use_photodiodes:
+            pd_readout = PhotodiodeReadout(exposure)
+            pd_readout.start_accumulation()
+        image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
+        if self.use_photodiodes:
+            # TODO: Why does this need the last argument - in fact it is not used?
+            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
+
+        # dark acquisition
+        for i in range(int(n_of_dark)):
+            self.take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
+            time.sleep(float(t_btw_darks))
+        return (image_name, file_list)
+
 class Fe55TestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
         super(Fe55TestCoordinator, self).__init__(options, 'FE55_FLAT', 'FE55')
