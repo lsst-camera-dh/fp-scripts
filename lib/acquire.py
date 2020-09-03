@@ -221,35 +221,31 @@ class LambdaTestCoordinator(FlatFieldTestCoordinator):
 
 class PersistenceTestCoordinator(FlatFieldTestCoordinator):
     ''' A TestCoordinator for all tests that involve taking persitence with the flat field generator '''
-    def __init__(self, options, test_type, image_type):
+    def __init__(self, options):
         super(PersistenceTestCoordinator, self).__init__(options, "BOT_PERSISTENCE", "FLAT")
         self.bcount = options.getInt('bcount', 10)
         self.wl_filter = options.get('wl')
         self.nd_filter= options.get('nd')
         self.persistence= options.getList('persistence')
 
-    def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        e_per_pixel, n_of_dark, exp_of_dark, t_btw_darks= self.persistence.split()
+    def take_images(self):
+        e_per_pixel, n_of_dark, exp_of_dark, t_btw_darks= self.persistence[0].split()
         e_per_pixel = float(e_per_pixel)
         exposure = self.compute_exposure_time(self.nd_filter, self.wl_filter, e_per_pixel)
         self.set_filters(self.nd_filter, self.wl_filter)
 
         # bias acquisitions
-        self.take_bias_image(self.bcount)
+        self.take_bias_images(self.bcount)
 
         # dark acquisition
-        if self.use_photodiodes:
-            pd_readout = PhotodiodeReadout(exposure)
-            pd_readout.start_accumulation()
-        image_name, file_list = super(PersistenceTestCoordinator, self).take_image(exposure, expose_command, "FLAT", symlink_image_type)
-        if self.use_photodiodes:
-            # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
+        expose_command = lambda: bot_bench.openShutter(exposure)
+        image_name, file_list = super(PersistenceTestCoordinator, self).take_image(exposure, expose_command, "FLAT",  symlink_image_type='flat_%s'% (self.wl_filter))
 
         # dark acquisition
+        self.use_photodiodes = False
         for i in range(int(n_of_dark)):
-            super(PersistenceTestCoordinator, self).take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
             time.sleep(float(t_btw_darks))
+            super(PersistenceTestCoordinator, self).take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
         return (image_name, file_list)
 
 class Fe55TestCoordinator(FlatFieldTestCoordinator):
@@ -476,7 +472,7 @@ def do_fe55(options):
     tc.take_images()
 
 def do_persistence(options):
-    #TODO: Implement this
+    print "Persistence called %s" % options
     tc = PersistenceTestCoordinator(options)
     tc.take_images()
 
