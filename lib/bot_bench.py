@@ -32,8 +32,9 @@ def setSpotFilter(filter):
 def openShutter(exposure):
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
+   print "Actual open time to tell the shutter is %d seconds" % int(1000*exposure*(1.-5/800.)))
    a=time.time()
-   bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure*(1.-5/800))))
+   bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure*(1.-5/800.))))
    b=time.time()
    time.sleep(0.03*exposure)
    c=time.time()
