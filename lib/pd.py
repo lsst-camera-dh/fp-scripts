@@ -56,7 +56,7 @@ class PhotodiodeReadout(object):
             Maximum number of reads of monitoring photodiode.  Default: 2048.
         """
 
-        buffertime = 1.0
+        buffertime = 3.0
 
 
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
