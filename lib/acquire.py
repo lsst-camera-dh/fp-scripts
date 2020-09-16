@@ -261,6 +261,7 @@ class PersistenceTestCoordinator(FlatFieldTestCoordinator):
                 time.sleep(float(t_btw_darks))
             super(PersistenceTestCoordinator, self).take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
         return (image_name, file_list)
+
 class Fe55TestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
         super(Fe55TestCoordinator, self).__init__(options, 'FE55_FLAT', 'FE55')
@@ -406,57 +407,59 @@ class ScanTestCoordinator(TestCoordinator):
         # TODO: Work about e2v sensors
 
     def take_images(self):
-        preCols = fp.fp.getSequencerParameter("PreCols")
-        readCols = fp.fp.getSequencerParameter("ReadCols")
-        postCols = fp.fp.getSequencerParameter("PostCols")
-        overCols = fp.fp.getSequencerParameter("OverCols")
-        preRows = fp.fp.getSequencerParameter("PreRows")
-        readRows = fp.fp.getSequencerParameter("ReadRows")
-        postRows = fp.fp.getSequencerParameter("PostRows")
-        scanMode = fp.fp.isScanEnabled()
-	print "Initial sequencer parameters"
+        if self.noop or self.skip - test_seq_num < self.scanmode + self.transparent:
+            preCols = fp.fp.getSequencerParameter("PreCols")
+            readCols = fp.fp.getSequencerParameter("ReadCols")
+            postCols = fp.fp.getSequencerParameter("PostCols")
+            overCols = fp.fp.getSequencerParameter("OverCols")
+            preRows = fp.fp.getSequencerParameter("PreRows")
+            readRows = fp.fp.getSequencerParameter("ReadRows")
+            postRows = fp.fp.getSequencerParameter("PostRows")
+            scanMode = fp.fp.isScanEnabled()
+            print "Initial sequencer parameters"
 
-	print "preCols="  , preCols
-	print "readCols=" , readCols
-	print "postCols=" , postCols
-	print "overCols=" , overCols
+            print "preCols="  , preCols
+            print "readCols=" , readCols
+            print "postCols=" , postCols
+            print "overCols=" , overCols
 
-	print "preRows="  , preRows
-	print "readRows=" , readRows
-	print "postRows=" , postRows
+            print "preRows="  , preRows
+            print "readRows=" , readRows
+            print "postRows=" , postRows
 
-	print "scanMode=" , scanMode
+            print "scanMode=" , scanMode
 
-        # set up scan mode
-        fp.fp.sequencerConfig().submitChanges(
-			{
-			"underCols":self.undercols,
-			"preCols":  self.precols,
-			"readCols": self.readcols,
-			"postCols": self.postcols,
-			"overCols": self.overcols,
-			"preRows":  self.prerows,
-			"readRows": self.readrows,
-			"postRows": self.postrows,
-			"overRows": self.overrows,
-			"scanMode": True
-			}
-		)
-        fp.fp.commitBulkChange()
+            # set up scan mode
+            fp.fp.sequencerConfig().submitChanges(
+                {
+                "underCols":self.undercols,
+                "preCols":  self.precols,
+                "readCols": self.readcols,
+                "postCols": self.postcols,
+                "overCols": self.overcols,
+                "preRows":  self.prerows,
+                "readRows": self.readrows,
+                "postRows": self.postrows,
+                "overRows": self.overrows,
+                "scanMode": True
+                }
+            )
+            fp.fp.commitBulkChange()
 
-	exposure = 1.0
+        exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
 
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-        fp.fp.sequencerConfig().submitChanges(
-			{
-			"transparentMode": 1
-			}
-		)
-        timeout= Duration.ofSeconds(60*5)
-        fp.fp.commitBulkChange(timeout=timeout)
+        if self.noop or self.skip - test_seq_num < self.transparent:
+            fp.fp.sequencerConfig().submitChanges(
+                {
+                "transparentMode": 1
+                }
+            )
+            timeout= Duration.ofSeconds(60*5)
+            fp.fp.commitBulkChange(timeout=timeout)
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
