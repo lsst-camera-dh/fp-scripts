@@ -65,8 +65,10 @@ class TestCoordinator(object):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
         global test_seq_num
-        if test_seq_num > self.limit:
-            raise Exception("Stopping since --limit reached before tSeqNum = %d" % test_seq_num)
+        if test_seq_num >= self.limit:
+            print "Stopping since --limit reached before tSeqNum = %d" % test_seq_num
+            sys.exit()
+
         if not self.noop:
             fits_header_data = self.create_fits_header_data(exposure, image_type)
             image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
