@@ -18,6 +18,9 @@ parser.add_option("--dry-run", action="store_true", dest="dry_run", default=Fals
 parser.add_option("-9","--ds9", action="store_true", dest="ds9")
 parser.add_option("--run", dest="run")
 parser.add_option("--symlink", dest="symlink")
+parser.add_option("--skip", dest="skip")
+parser.add_option("--limit", dest="limit")
+
 (options, args) = parser.parse_args()
 
 if len(args)!=1:
@@ -35,4 +38,4 @@ if options.run:
 import config
 
 cfg = config.parseConfig(args[0])
-config.execute(cfg, {"dry_run": options.dry_run, "run": options.run, "symlink": options.symlink})
+config.execute(cfg, {"dry_run": options.dry_run, "run": options.run, "symlink": options.symlink, "skip": options.skip, "limit": options.limit})

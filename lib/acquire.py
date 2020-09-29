@@ -1,12 +1,13 @@
 import os
 import time
 import config
+import sys
 import fp
 #import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
-import jarray 
+import jarray
 from java.lang import String
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
@@ -27,6 +28,9 @@ class TestCoordinator(object):
     def __init__(self, options, test_type, image_type):
         self.run = options['run']
         self.symlink = options['symlink']
+        self.skip = options.getInt('skip', 0)
+        self.limit = self.skip + options.getInt('limit', 10000000)
+        self.noop = self.skip > 0
         self.test_type = test_type
         self.image_type = image_type
         self.annotation = options.get('annotation','')
@@ -61,12 +65,21 @@ class TestCoordinator(object):
     def __take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
-        fits_header_data = self.create_fits_header_data(exposure, image_type)
-        image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
-        self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
         global test_seq_num
-        test_seq_num = test_seq_num + 1
-        return (image_name, file_list)
+        if test_seq_num >= self.limit:
+            print "Stopping since --limit reached before tSeqNum = %d" % test_seq_num
+            sys.exit()
+
+        if not self.noop:
+            fits_header_data = self.create_fits_header_data(exposure, image_type)
+            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
+            self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
+            test_seq_num += 1
+            return (image_name, file_list)
+        else:
+            test_seq_num += 1
+            self.noop = test_seq_num < self.skip
+            return (None, None)
 
     def create_symlink(self, file_list, test_type, image_type):
         ''' Create symlinks for created FITS files, based on the specification here:
@@ -135,11 +148,11 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         bot_bench.setColorFilter(wl_filter)
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        if self.use_photodiodes:
+        if self.use_photodiodes and not self.noop:
             pd_readout = PhotodiodeReadout(exposure)
             pd_readout.start_accumulation()
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
-        if self.use_photodiodes:
+        if self.use_photodiodes and not self.noop:
             # TODO: Why does this need the last argument - in fact it is not used?
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
@@ -173,7 +186,8 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             exposure = self.compute_exposure_time(nd_filter, self.wl_filter, e_per_pixel)
             expose_command = lambda: bot_bench.openShutter(exposure)
             print "exp %s filter %s" % (exposure, nd_filter)
-            self.set_filters(nd_filter, self.wl_filter)
+            if not self.noop or self.skip - test_seq_num < self.bcount + 2:
+                self.set_filters(nd_filter, self.wl_filter)
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (nd_filter, self.wl_filter, e_per_pixel, pair))
@@ -201,7 +215,8 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
             e_per_pixel = float(e_per_pixel)
             exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
             expose_command = lambda: bot_bench.openShutter(exposure)
-            self.set_filters(nd_filter, wl_filter)
+            if not self.noop or self.skip - test_seq_num < count*(self.bcount + 1):
+                self.set_filters(nd_filter, wl_filter)
             for c in range(count):
                 self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s'% (wl_filter, self.low_or_high(e_per_pixel)))
 
@@ -216,7 +231,8 @@ class LambdaTestCoordinator(FlatFieldTestCoordinator):
             wl_filter, e_per_pixel, nd_filter = lamb.split()
             exposure = self.compute_exposure_time(nd_filter, wl_filter, e_per_pixel)
             expose_command = lambda: bot_bench.openShutter(exposure)
-            self.set_filters(nd_filter, wl_filter)
+            if not self.noop or self.skip - test_seq_num < self.bcount + 1:
+                self.set_filters(nd_filter, wl_filter)
             self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s' % (wl_filter, e_per_pixel))
 
 class PersistenceTestCoordinator(FlatFieldTestCoordinator):
@@ -244,7 +260,8 @@ class PersistenceTestCoordinator(FlatFieldTestCoordinator):
         # dark acquisition
         self.use_photodiodes = False
         for i in range(int(n_of_dark)):
-            time.sleep(float(t_btw_darks))
+            if not self.noop:
+                time.sleep(float(t_btw_darks))
             super(PersistenceTestCoordinator, self).take_image(float(exp_of_dark), lambda: time.sleep(float(exp_of_dark)), image_type="DARK")
         return (image_name, file_list)
 
@@ -273,7 +290,8 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
                 if exposure>0:
                     bot_bench.openShutter(exposure) # Flat
                 bot_bench.openFe55Shutter(self.fe55exposure) # Fe55
-            self.set_filters(self.nd_filter, wl_filter)
+            if not self.noop or self.skip - test_seq_num < self.fe55count*(self.bcount + 1):
+                self.set_filters(self.nd_filter, wl_filter)
             for i in range (self.fe55count):
                 self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
 
@@ -298,8 +316,9 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            (x, y) = [float(x) for x in point.split()]
-            bot.moveTo(x, y)
+            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
+                (x, y) = [float(x) for x in point.split()]
+                bot.moveTo(x, y)
             for exposure in self.exposures:
                 (self.led, self.current, duration) = exposure.split()
                 self.current = float(self.current)
@@ -323,8 +342,9 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            (x, y) = [float(x) for x in point.split()]
-            bot.moveTo(x, y)
+            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
+                (x, y) = [float(x) for x in point.split()]
+                bot.moveTo(x, y)
             for exposure in self.exposures:
                 exposure = float(exposure)
                 expose_command = lambda: bot_bench.openShutter(exposure)
@@ -354,8 +374,9 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            (x, y) = [float(x) for x in point.split()]
-            bot.moveTo(x, y)
+            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
+                (x, y) = [float(x) for x in point.split()]
+                bot.moveTo(x, y)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
                 self.exposure1 = float(exposure1)
@@ -389,59 +410,59 @@ class ScanTestCoordinator(TestCoordinator):
         # TODO: Work about e2v sensors
 
     def take_images(self):
-        preCols = fp.fp.getSequencerParameter("PreCols")
-        readCols = fp.fp.getSequencerParameter("ReadCols")
-        postCols = fp.fp.getSequencerParameter("PostCols")
-        overCols = fp.fp.getSequencerParameter("OverCols")
-        preRows = fp.fp.getSequencerParameter("PreRows")
-        readRows = fp.fp.getSequencerParameter("ReadRows")
-        postRows = fp.fp.getSequencerParameter("PostRows")
-        scanMode = fp.fp.isScanEnabled()
-	print "Initial sequencer parameters"
+        if self.noop or self.skip - test_seq_num < self.scanmode + self.transparent:
+            preCols = fp.fp.getSequencerParameter("PreCols")
+            readCols = fp.fp.getSequencerParameter("ReadCols")
+            postCols = fp.fp.getSequencerParameter("PostCols")
+            overCols = fp.fp.getSequencerParameter("OverCols")
+            preRows = fp.fp.getSequencerParameter("PreRows")
+            readRows = fp.fp.getSequencerParameter("ReadRows")
+            postRows = fp.fp.getSequencerParameter("PostRows")
+            scanMode = fp.fp.isScanEnabled()
+            print "Initial sequencer parameters"
 
-	print "preCols="  , preCols
-	print "readCols=" , readCols
-	print "postCols=" , postCols
-	print "overCols=" , overCols
+            print "preCols="  , preCols
+            print "readCols=" , readCols
+            print "postCols=" , postCols
+            print "overCols=" , overCols
 
-	print "preRows="  , preRows
-	print "readRows=" , readRows
-	print "postRows=" , postRows
+            print "preRows="  , preRows
+            print "readRows=" , readRows
+            print "postRows=" , postRows
 
-	print "scanMode=" , scanMode
+            print "scanMode=" , scanMode
 
-        # set up scan mode
-        fp.fp.sequencerConfig().submitChanges(
-			{
-			"underCols":self.undercols,
-			"preCols":  self.precols,
-			"readCols": self.readcols,
-			"postCols": self.postcols,
-			"overCols": self.overcols,
-			"preRows":  self.prerows,
-			"readRows": self.readrows,
-			"postRows": self.postrows,
-			"overRows": self.overrows,
-			"scanMode": True
-			}
-		)
-        fp.fp.commitBulkChange()
+            # set up scan mode
+            fp.fp.sequencerConfig().submitChanges(
+                {
+                "underCols":self.undercols,
+                "preCols":  self.precols,
+                "readCols": self.readcols,
+                "postCols": self.postcols,
+                "overCols": self.overcols,
+                "preRows":  self.prerows,
+                "readRows": self.readrows,
+                "postRows": self.postrows,
+                "overRows": self.overrows,
+                "scanMode": True
+                }
+            )
+            fp.fp.commitBulkChange()
 
-
-	exposure = 1.0
+        exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
 
         for i in range(self.scanmode):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
-
-        fp.fp.sequencerConfig().submitChanges(
-			{
-			"transparentMode": 1
-			}
-		)
-        timeout= Duration.ofSeconds(60*5)
-        fp.fp.commitBulkChange(timeout=timeout)
+        if self.noop or self.skip - test_seq_num < self.transparent:
+            fp.fp.sequencerConfig().submitChanges(
+                {
+                "transparentMode": 1
+                }
+            )
+            timeout= Duration.ofSeconds(60*5)
+            fp.fp.commitBulkChange(timeout=timeout)
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)

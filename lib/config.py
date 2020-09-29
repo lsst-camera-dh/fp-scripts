@@ -12,8 +12,8 @@ def parseConfig(file):
 
   # Eliminate inline # delimited comments
   slines = map(lambda l: re.sub(r"([^#]*)\s#.*", r"\1", l), lines)
-  config = ConfigParser.SafeConfigParser(allow_no_value=True) 
-  config.readfp(StringIO.StringIO("".join(slines))) 
+  config = ConfigParser.SafeConfigParser(allow_no_value=True)
+  config.readfp(StringIO.StringIO("".join(slines)))
   return config
 
 def setvoltages(avoltage):
@@ -53,20 +53,20 @@ class Config(dict):
   def getInt(self, key, defaultValue=None):
      value = self.get(key)
      if not value:
-       if defaultValue:
+       if defaultValue != None:
           return defaultValue
        else:
           raise Exception('Missing config value %s' % key)
-     return int(value)    
+     return int(value)
 
   def getFloat(self, key, defaultValue=None):
      value = self.get(key)
      if not value:
-       if defaultValue:
+       if defaultValue != None:
           return defaultValue
        else:
           raise Exception('Missing config value %s' % key)
-     return float(value)    
+     return float(value)
 
   def getList(self, key):
      return self.get(key).replace('\n','').split(',')
