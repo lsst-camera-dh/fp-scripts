@@ -5,6 +5,7 @@ from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
+from ccs import versions
 from java.time import Duration
 
 # Temporary work around for problems with CCS responsiveness
@@ -25,7 +26,11 @@ if len(args)!=1:
 
 #CCS.aliases = {'focal-plane': 'focal-plane-sim', 'bot-bench': 'bot-bench-sim'}
 #CCS.aliases = {'focal-plane': 'ts8-fp', 'bot-bench': 'ts8-bench' }
-#ccs_sub.write_versions()
+
+# Assume if run is set we are running under eTraveler
+if options.run:
+  fp = CCS.attachProxy('focal-plane')
+  versions.write_versions(fp)
 
 import config
 
