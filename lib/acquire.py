@@ -1,6 +1,7 @@
 import os
 import time
 import config
+import sys
 import fp
 #import ccob
 import bot
