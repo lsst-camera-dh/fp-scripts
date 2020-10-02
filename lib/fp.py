@@ -30,38 +30,6 @@ def sanityCheck():
    if alert!=AlertState.NOMINAL:
       print "WARNING: %s subsystem is in alert state %s" % ( agentName, alert )
 
-def startIdleFlush():
-   #
-   # no action if already in idle flushing
-   # starts on success
-   # lets the subsystem throw error otherwise
-   #
-   state = fp.getState()
-   fpstate = state.getState(FocalPlaneState)
-   if fpstate == FocalPlaneState.IDLE_FLUSH:
-      return
-   if fpstate != FocalPlaneState.QUIESCENT:
-      print "WARNING: %s subsystem is in state %s != QUIESCENT" % ( agentName, fpstate )
-   fp.startIdleFlush()
-   return
-
-def endIdleFlush(n=1):
-   #
-   # no action if already in idle flushing
-   # starts on success
-   # lets the subsystem throw error otherwise
-   #
-   state = fp.getState()
-   fpstate = state.getState(FocalPlaneState)
-   if fpstate == FocalPlaneState.QUIESCENT:  # silently accept
-      return
-   if fpstate != FocalPlaneState.IDLE_FLUSH:
-      print "WARNING: %s subsystem is in state %s != IDLE_FLUSH" % ( agentName, fpstate )
-      return
-   fp.endIdleFlush(n)
-   fp.waitForSequencer(Duration.ofSeconds(2))
-   return
-
 def clear(n=1):
    if n == 0:
       return
@@ -78,11 +46,9 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
 
 def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1):
    sanityCheck()
-   endIdleFlush(0)
-   clear(clears)
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
-   imageName = fp.startIntegration(annotation, locations)
+   imageName = fp.allocateImageName() 
    print "Image name: %s" % imageName
 
    # Horrible fix for using "fast" gpfs disk at SLAC
@@ -96,6 +62,8 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       if not os.path.exists(newLocation):
          os.makedirs(newLocation)
       os.symlink(newLocation, oldLocation+imageName.toString())
+
+   fp.clearAndStartNamedIntegration(imageName, clears, annotation, locations)
 
    if exposeCommand:
       extraData = exposeCommand()
