@@ -1,5 +1,6 @@
 #!/usr/bin/env ccs-script
 import sys
+import time
 #sys.path.insert(0,"/gpfs/slac/lsst/fs1/g/data/youtsumi/ts8/fp-scripts/lib")
 from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
@@ -33,6 +34,7 @@ if len(args)!=1:
 # Assume if run is set we are running under eTraveler
 if options.run:
   fp = CCS.attachProxy('focal-plane')
+  time.sleep(10.0)
   versions.write_versions(fp)
 
 import config
