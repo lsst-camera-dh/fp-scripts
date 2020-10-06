@@ -10,7 +10,7 @@ import os
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
 agentName = fp.getAgentProperty("agentName")
-if  agentName != "focal-plane":
+if agentName != "focal-plane":
    fp = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
@@ -33,7 +33,6 @@ def sanityCheck():
 def clear(n=1):
    if n == 0:
       return
-   endIdleFlush()
    print "Clearing CCDs (%d)" % n
    fp.clear(n)
    fp.waitForSequencer(Duration.ofSeconds(2))
@@ -48,7 +47,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    sanityCheck()
    print "Setting FITS headers %s" % fitsHeaderData
    fp.setHeaderKeywords(fitsHeaderData)
-   imageName = fp.allocateImageName() 
+   imageName = fp.allocateImageName()
    print "Image name: %s" % imageName
 
    # Horrible fix for using "fast" gpfs disk at SLAC
