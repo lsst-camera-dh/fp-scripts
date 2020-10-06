@@ -7,6 +7,7 @@ from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
 from ccs import versions
+from ccs import configs
 from java.time import Duration
 
 # Temporary work around for problems with CCS responsiveness
@@ -36,6 +37,9 @@ if options.run:
   fp = CCS.attachProxy('focal-plane')
   time.sleep(10.0)
   versions.write_versions(fp)
+  configs.write_config(fp, ['Sequencer', 'Rafts'])
+
+
 
 import config
 
