@@ -148,11 +148,12 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         bot_bench.setColorFilter(wl_filter)
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
-        if self.use_photodiodes and not self.noop:
+        use_pd = self.use_photodiodes and not self.noop
+        if use_pd:
             pd_readout = PhotodiodeReadout(exposure)
             pd_readout.start_accumulation()
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
-        if self.use_photodiodes and not self.noop:
+        if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
@@ -419,6 +420,7 @@ class ScanTestCoordinator(TestCoordinator):
             readRows = fp.fp.getSequencerParameter("ReadRows")
             postRows = fp.fp.getSequencerParameter("PostRows")
             scanMode = fp.fp.isScanEnabled()
+            idleFlushTimeout = fp.fp.getSequencerParameter("idleFlushTimeout")
             print "Initial sequencer parameters"
 
             print "preCols="  , preCols
@@ -431,6 +433,7 @@ class ScanTestCoordinator(TestCoordinator):
             print "postRows=" , postRows
 
             print "scanMode=" , scanMode
+            print "idleFlushTimeout=" , idleFlushTimeout
 
             # set up scan mode
             fp.fp.sequencerConfig().submitChanges(
@@ -444,10 +447,13 @@ class ScanTestCoordinator(TestCoordinator):
                 "readRows": self.readrows,
                 "postRows": self.postrows,
                 "overRows": self.overrows,
-                "scanMode": True
+                "scanMode": True,
+                "idleFlushTimeout": -1
                 }
             )
             fp.fp.commitBulkChange()
+            if idleFlushTimeout != -1:
+                fp.clear()
 
         exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -470,6 +476,8 @@ class ScanTestCoordinator(TestCoordinator):
         # Restore settings
         fp.fp.dropAllChanges()
 
+        if idleFlushTimeout != -1:
+            fp.clear()
 
 def do_bias(options):
     print "bias called %s" % options
