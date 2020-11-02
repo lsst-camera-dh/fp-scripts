@@ -6,6 +6,7 @@ from ccs import proxies
 import time
 
 bb = CCS.attachProxy("bot-bench")
+MAX_EXPOSURE = 999.0
 
 def sanityCheck():
    state = bb.getState()
@@ -32,15 +33,25 @@ def setSpotFilter(filter):
 def openShutter(exposure):
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
-   print "Actual open time to tell the shutter is %d mili seconds" % int(1000*exposure*(1.-5/800.))
-   a=time.time()
-   bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure*(1.-5/800.))))
-   b=time.time()
-   time.sleep(0.03*exposure)
-   c=time.time()
-   bb.ProjectorShutter().waitForClosed()
-   d=time.time()
-   print ("{} sec for open exposure, {} sec for a sleeping,  {} sec for waitForClosed".format(b-a, c-b, d-c))
+   if exposure<=MAX_EXPOSURE:
+      print "Actual open time to tell the shutter is %d mili seconds" % int(1000*exposure*(1.-5/800.))
+      a=time.time()
+      bb.ProjectorShutter().exposure(Duration.ofMillis(int(1000*exposure*(1.-5/800.))))
+      b=time.time()
+      time.sleep(0.03*exposure)
+      c=time.time()
+      bb.ProjectorShutter().waitForClosed()
+      d=time.time()
+      print ("{} sec for open exposure, {} sec for a sleeping,  {} sec for waitForClosed".format(b-a, c-b, d-c))
+   else:
+      a=time.time()
+      bb.ProjectorShutter().openShutter()
+      b=time.time()
+      time.sleep(exposure)
+      c=time.time()
+      bb.ProjectorShutter().closeShutter()
+      d=time.time()
+      print ("{} sec for manual exposure, {} sec for close, {} total elapsed".format(exposure, d-c, d-a))
    print "Shutter closed"
 
 def openFe55Shutter(exposure):
