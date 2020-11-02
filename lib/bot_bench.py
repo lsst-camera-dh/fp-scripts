@@ -48,11 +48,10 @@ def openShutter(exposure):
       bb.ProjectorShutter().openShutter()
       b=time.time()
       time.sleep(exposure)
-      bb.ProjectorShutter().closeShutter()
       c=time.time()
-      bb.ProjectorShutter().waitForClosed()
+      bb.ProjectorShutter().closeShutter()
       d=time.time()
-      print ("{} sec for manual exposure, {} sec for waitForClosed, {} total elapsed".format(exposure, d-c, d-a))
+      print ("{} sec for manual exposure, {} sec for close, {} total elapsed".format(exposure, d-c, d-a))
    print "Shutter closed"
 
 def openFe55Shutter(exposure):
