@@ -118,13 +118,16 @@ class PhotodiodeReadout(object):
         logger.info("Photodiode readout accumulation started at %f",
                          self.start_time)
 
+        astart = time.time()
         running = False
+#        time.sleep(0.05)
         while not running:
-            time.sleep(0.25)
+#            time.sleep(0.25)
             try:
 
                 running = bbsub.PhotoDiode().isAccumInProgress()
-
+                if not running :
+                    time.sleep(0.10)
             except StandardError as eobj:
                 logger.info("PhotodiodeReadout.start_accumulation:")
                 logger.info(str(eobj))
@@ -133,6 +136,8 @@ class PhotodiodeReadout(object):
 
             logger.info("Photodiode checking that accumulation started at %f",
                          time.time() - self.start_time)
+
+        print("Time spent checking that accumulation started = ",(time.time()-astart)/1000.0)
 
     def write_readings(self, destination_spec, seqno='000000', dtstr=datetime.date.today().strftime('%Y%m%d')):
         """
