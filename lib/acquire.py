@@ -375,8 +375,8 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
+            (x, y) = [float(x) for x in point.split()]
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
@@ -390,7 +390,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                         bot_bench.openShutter(self.exposure2)
 
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.exposure1, self.exposure2))
+                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):
     ''' A TestCoordinator for taking scan-mode images '''
