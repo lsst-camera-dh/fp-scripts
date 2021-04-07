@@ -136,8 +136,8 @@ class PhotodiodeReadout(object):
         if (self.nreads<100) :
             bbsub.PhotoDiode().accumBuffer(self.nreads,self.nplc*self.navg,asynch=True)
         else:
-            bbsub.PhotoDiode().accumBuffer(int(0.10*self.nreads),self.nplc*self.navg,1,0.90*(self.nreads*self.nplc*self.navg/60.),asynch=True)
-
+#            bbsub.PhotoDiode().accumBuffer(int(0.05*self.nreads),self.nplc*self.navg,1,0.90*(self.nreads*self.nplc*self.navg/60.),asynch=True)
+            bbsub.sendAsynchCommand("%s accumBuffer %d %f %d %f" % (devName,int(0.05*self.nreads),self.nplc*self.navg,1,0.90*(self.nreads*self.nplc*self.navg/60.)) )
 #       bbsub.PhotoDiode().accumBuffer(self.nreads,self.nplc*self.navg,asynch=True)
 #        bbsub.sendAsynchCommand("%s accumBuffer %d %f" % (devName,self.nreads,self.nplc*self.navg))
         self.start_time = time.time()
@@ -149,21 +149,21 @@ class PhotodiodeReadout(object):
         running = False
 
 #        time.sleep(0.05)
-        while not running:
-#            time.sleep(0.25)
-            try:
-
-                running = bbsub.PhotoDiode().isAccumInProgress()
-                if not running :
-                    time.sleep(0.10)
-            except StandardError as eobj:
-                logger.info("PhotodiodeReadout.start_accumulation:")
-                logger.info(str(eobj))
-            except :
-                logger.info("isPDAccumInProgress command rejected")
-
-            logger.info("Photodiode checking that accumulation started at %f",
-                         time.time() - self.start_time)
+#        while not running:
+##            time.sleep(0.25)
+#            try:
+#
+#                running = bbsub.PhotoDiode().isAccumInProgress()
+#                if not running :
+#                    time.sleep(0.10)
+#            except StandardError as eobj:
+#                logger.info("PhotodiodeReadout.start_accumulation:")
+#                logger.info(str(eobj))
+#            except :
+#                logger.info("isPDAccumInProgress command rejected")
+#
+#            logger.info("Photodiode checking that accumulation started at %f",
+#                         time.time() - self.start_time)
 
         print("Time spent checking that accumulation started = ",(time.time()-astart)/1000.0)
 
