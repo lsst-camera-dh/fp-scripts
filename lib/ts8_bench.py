@@ -16,7 +16,8 @@ def sanityCheck():
 
 def setNDFilter(filter):
    sanityCheck()
-   print "Setting SlitWidth",filter
+   print "Setting 1 and 2 SlitWidth",filter
+   bb.Monochromator().setSlitSize(1,int(re.match(r"slit(\d+)",filter).group(1)))
    bb.Monochromator().setSlitSize(2,int(re.match(r"slit(\d+)",filter).group(1)))
 
 def setColorFilter(filter):
@@ -31,11 +32,14 @@ def setSpotFilter(filter):
 
 # Open the flat field projector shutter
 def openShutter(exposure):
+   open_delay  = 0.1
+   close_delay = 0.1
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
    bb.Monochromator().openShutter()
    time.sleep(exposure)
    bb.Monochromator().closeShutter()
+   time.sleep(close_delay)  # give time for shutter to close before readout starts
    print "Shutter closed"
 
 def openFe55Shutter(exposure):

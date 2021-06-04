@@ -14,7 +14,7 @@ if agentName != "focal-plane":
    fp = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
-symlinkToFast = True
+symlinkToFast = False
 # These need to be changed when we switch R_and_D -> rawData
 symLinkFromLocation = "/gpfs/slac/lsst/fs3/g/data/rawData/focal-plane/"
 symLinkToLocation = "/gpfs/slac/lsst/fs3/g/fast/rawData/focal-plane/"
