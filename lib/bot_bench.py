@@ -5,7 +5,7 @@ from java.time import Duration
 from ccs import proxies
 import time
 
-bb = CCS.attachProxy("ts8-bench")
+bb = CCS.attachProxy("bot-bench")
 MAX_EXPOSURE = 999.0
 
 def sanityCheck():
