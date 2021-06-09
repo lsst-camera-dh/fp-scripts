@@ -21,17 +21,21 @@ from ccs_scripting_tools import CcsSubsystems, CCS
 from ccs import aliases
 from ccs import proxies
 
-#bbsub = CCS.attachProxy("bot-bench")
+bbsub = CCS.attachProxy("bot-bench")
 
 ##  The bleow 3 lines are needed for workaround.
-agentName = "ts8-bench"
-devName   = "PhotoDiode"
-#agentName = bbsub.getAgentProperty("agentName")
+#agentName = "ts8-bench"
+#devName   = "PhotoDiode"
+agentName = bbsub.getAgentProperty("agentName")
 #if  agentName != "bot-bench":
 bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
-if  agentName == "ts8-bench":
-    bbsub.PhotoDiode = bbsub.Monitor2
-    devName = "Monitor2"
+#if  agentName == "ts8-bench":
+#    bbsub.PhotoDiode = bbsub.Monitor2
+#    devName = "Monitor2"
+# use Monitor2 anyway for both ts8-bench and bot-bench
+bbsub.PhotoDiode = bbsub.Monitor2
+devName = "Monitor2"
+
 #bbsub_PhotoDiode = CCS.attachSubsystem("ts8-bench/Monitor")
 
 __all__ = ["PhotodiodeReadout","logger"]
