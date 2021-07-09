@@ -192,6 +192,7 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (nd_filter, self.wl_filter, e_per_pixel, pair))
+#                time.sleep(30)
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
@@ -420,7 +421,7 @@ class ScanTestCoordinator(TestCoordinator):
             readRows = fp.fp.getSequencerParameter("ReadRows")
             postRows = fp.fp.getSequencerParameter("PostRows")
             scanMode = fp.fp.isScanEnabled()
-            idleFlushTimeout = fp.fp.getSequencerParameter("idleFlushTimeout")
+            idleFlushTimeout = fp.fp.getConfigurationParameterValue("sequencerConfig","idleFlushTimeout")
             print "Initial sequencer parameters"
 
             print "preCols="  , preCols
@@ -451,7 +452,7 @@ class ScanTestCoordinator(TestCoordinator):
                 "idleFlushTimeout": -1
                 }
             )
-            fp.fp.commitBulkChange()
+            fp.fp.applySubmittedChanges()
             if idleFlushTimeout != -1:
                 fp.clear()
 
@@ -468,7 +469,7 @@ class ScanTestCoordinator(TestCoordinator):
                 }
             )
             timeout= Duration.ofSeconds(60*5)
-            fp.fp.commitBulkChange(timeout=timeout)
+            fp.fp.applySubmittedChanges(timeout=timeout)
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
