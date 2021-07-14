@@ -363,6 +363,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.signalpersec = float(options.get('signalpersec'))
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
@@ -375,13 +376,19 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            (x, y) = [float(x) for x in point.split()]
+            (x, y, loc) = point.split()
+            x = float(x)
+            y = float(y)
+            try:
+                self.locations = loc
+            try:
+                self.locations = None
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
-                self.exposure1 = float(exposure1)
-                self.exposure2 = float(exposure2)
+                self.exposure1 = float(exposure1)/self.signalpersec
+                self.exposure2 = float(exposure2)/self.signalpersec
                 def expose_command():
                     self.set_filter(self.mask1)
                     bot_bench.openShutter(self.exposure1)
