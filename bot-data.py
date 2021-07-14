@@ -1,7 +1,6 @@
 #!/usr/bin/env ccs-script
 import sys
 import time
-sys.path.insert(0,"/home/youtsumi/fp-scripts/lib")
 from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
@@ -38,8 +37,6 @@ if options.run:
   time.sleep(10.0)
   versions.write_versions(fp)
   configs.write_config(fp, ['Sequencer', 'Rafts'])
-
-
 
 import config
 
