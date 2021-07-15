@@ -381,7 +381,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
             y = float(splittedpoints[1])
             try:
                 self.locations = splittedpoints[2]
-            try:
+            except:
                 self.locations = None
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
