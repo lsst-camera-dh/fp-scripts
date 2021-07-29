@@ -155,6 +155,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
+            time.sleep(exposure*0.15) # wait for extra 15% of exposure time to make sure it is about to finish
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
@@ -192,7 +193,6 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (nd_filter, self.wl_filter, e_per_pixel, pair))
-#                time.sleep(30)
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
