@@ -36,6 +36,7 @@ class TestCoordinator(object):
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
         self.clears = options.getInt('clears', 1)
+        self.extra_delay = options.getFloat('extradelay', 0)
 
     def take_images(self):
         pass
@@ -69,6 +70,10 @@ class TestCoordinator(object):
         if test_seq_num >= self.limit:
             print "Stopping since --limit reached before tSeqNum = %d" % test_seq_num
             sys.exit()
+
+        if self.extra_delay > 0:
+            print "Extra delay %g" % self.extra_delay
+            time.sleep(self.extra_delay)
 
         if not self.noop:
             fits_header_data = self.create_fits_header_data(exposure, image_type)
