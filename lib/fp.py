@@ -5,6 +5,7 @@ from org.lsst.ccs.subsystem.focalplane.states import FocalPlaneState
 from java.time import Duration
 from ccs import proxies
 #import bot_bench
+import time
 import array
 import os
 
@@ -63,6 +64,8 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       os.symlink(newLocation, oldLocation+imageName.toString())
 
    fp.clearAndStartNamedIntegration(imageName, clears, annotation, locations)
+   # Sleep for 70 ms to allow for clear which is part of integrate to complete
+   time.sleep(0.07)
 
    if exposeCommand:
       extraData = exposeCommand()
