@@ -40,8 +40,11 @@ def execute(config, command_line_options):
     for item in items:
        options = Config(dict(config.items(item.upper())))
        options.update(command_line_options)
-       options.update({'acqtype': item.upper()})
+       acq_type = options.get('acqtype')
+       if !acq_type:
+          acq_type = item
        method = getattr(acquire,'do_%s' % item)
+       options.update({'acqtype': acq_type.upper()})
        print ("{}".format('do_%s' % item))
        result = method(options)
 

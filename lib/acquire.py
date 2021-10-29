@@ -375,8 +375,8 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
+            (x, y) = [float(x) for x in point.split()]
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
