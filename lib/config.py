@@ -43,9 +43,8 @@ def execute(config, command_line_options):
        acq_type = options.get('acqtype')
        if not acq_type:
           acq_type = item
-       method = getattr(acquire,'do_%s' % item)
+       method = getattr(acquire,'do_%s' % acq_type)
        options.update({'acqtype': acq_type.upper()})
-       print ("{}".format('do_%s' % item))
        result = method(options)
 
 class Config(dict):
