@@ -350,15 +350,14 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
+            splittedpoints = point.split()
+            x = float(splittedpoints[0])
+            y = float(splittedpoints[1])
+            try:
+                self.locations = ",".join(splittedpoints[2].split("_"))
+            except:
+                self.locations = None
             if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                splittedpoints = point.split()
-                x = float(splittedpoints[0])
-                y = float(splittedpoints[1])
-                try:
-                    self.locations = ",".join(splittedpoints[2].split("_"))
-                except:
-                    self.locations = None
-
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 exposure = float(exposure)
