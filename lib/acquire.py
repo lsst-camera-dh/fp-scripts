@@ -380,7 +380,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
             x = float(splittedpoints[0])
             y = float(splittedpoints[1])
             try:
-                self.locations = splittedpoints[2]
+                self.locations = ",".join(splittedpoints[2].split("_"))
             except:
                 self.locations = None
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
