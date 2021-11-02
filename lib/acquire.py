@@ -360,7 +360,7 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
             if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
-                exposure = float(exposure)
+                exposure = float(exposure)/self.signalpersec
                 expose_command = lambda: bot_bench.openShutter(exposure)
                 for i in range(self.imcount):
                     self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%03.1f_%03.1f_%03.1f' % (x, y, exposure))
