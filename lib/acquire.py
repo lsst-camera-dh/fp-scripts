@@ -160,6 +160,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
+            time.sleep(exposure*0.15) # wait for extra 15% of exposure time to make sure it is about to finish
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
@@ -432,7 +433,7 @@ class ScanTestCoordinator(TestCoordinator):
             readRows = fp.fp.getSequencerParameter("ReadRows")
             postRows = fp.fp.getSequencerParameter("PostRows")
             scanMode = fp.fp.isScanEnabled()
-            idleFlushTimeout = fp.fp.getSequencerParameter("idleFlushTimeout")
+            idleFlushTimeout = fp.fp.getConfigurationParameterValue("sequencerConfig","idleFlushTimeout")
             print "Initial sequencer parameters"
 
             print "preCols="  , preCols
@@ -463,7 +464,7 @@ class ScanTestCoordinator(TestCoordinator):
                 "idleFlushTimeout": -1
                 }
             )
-            fp.fp.commitBulkChange()
+            fp.fp.applySubmittedChanges()
             if idleFlushTimeout != -1:
                 fp.clear()
 
@@ -480,7 +481,7 @@ class ScanTestCoordinator(TestCoordinator):
                 }
             )
             timeout= Duration.ofSeconds(60*5)
-            fp.fp.commitBulkChange(timeout=timeout)
+            fp.fp.applySubmittedChanges(timeout=timeout)
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)

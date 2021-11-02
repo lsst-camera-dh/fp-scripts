@@ -1,7 +1,6 @@
 #!/usr/bin/env ccs-script
 import sys
 import time
-#sys.path.insert(0,"/gpfs/slac/lsst/fs1/g/data/youtsumi/ts8/fp-scripts/lib")
 from optparse import OptionParser
 from org.lsst.ccs.scripting import CCS
 from ccs import aliases
@@ -30,7 +29,7 @@ if len(args)!=1:
   exit(1)
 
 #CCS.aliases = {'focal-plane': 'focal-plane-sim', 'bot-bench': 'bot-bench-sim'}
-#CCS.aliases = {'focal-plane': 'ts8-fp', 'bot-bench': 'ts8-bench' }
+CCS.aliases = {'focal-plane': 'ts8-fp', 'bot-bench': 'bot-bench' }
 
 # Assume if run is set we are running under eTraveler
 if options.run:
@@ -38,8 +37,6 @@ if options.run:
   time.sleep(10.0)
   versions.write_versions(fp)
   configs.write_config(fp, ['Sequencer', 'Rafts'])
-
-
 
 import config
 

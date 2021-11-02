@@ -55,7 +55,7 @@ class ccsProxy(object):
       return forward
 
 @staticmethod
-def attachProxy(key):
-   return ccsProxy(CCS.attachSubsystem(key),key)
+def attachProxy(key, level=0):
+   return ccsProxy(CCS.attachSubsystem(key, level),key)
 
 CCS.attachProxy = attachProxy
