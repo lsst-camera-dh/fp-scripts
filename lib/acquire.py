@@ -346,14 +346,21 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.signalpersec = float(options.get('signalpersec'))
 
     def take_images(self):
         for point in self.points:
+            splittedpoints = point.split()
+            x = float(splittedpoints[0])
+            y = float(splittedpoints[1])
+            try:
+                self.locations = ",".join(splittedpoints[2].split("_"))
+            except:
+                self.locations = None
             if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
                 bot.moveTo(x, y)
             for exposure in self.exposures:
-                exposure = float(exposure)
+                exposure = float(exposure)/self.signalpersec
                 expose_command = lambda: bot_bench.openShutter(exposure)
                 for i in range(self.imcount):
                     self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%03.1f_%03.1f_%03.1f' % (x, y, exposure))
