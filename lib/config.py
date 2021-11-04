@@ -36,6 +36,10 @@ def execute(config, command_line_options):
        time.sleep(30)	# wait a bit for getting settled
        command_line_options["symlink"] = "/".join([symlink,alabel])
 
+    one_time_config = config.options("CONFIG")
+    if one_time_config:
+       acquire.do_one_time_config(one_time_config)
+
     items = config.options("ACQUIRE")
     for item in items:
        options = Config(dict(config.items(item.upper())))
