@@ -36,6 +36,10 @@ def execute(config, command_line_options):
        time.sleep(30)	# wait a bit for getting settled
        command_line_options["symlink"] = "/".join([symlink,alabel])
 
+    one_time_config = config.items("CONFIG")
+    if one_time_config:
+       acquire.do_one_time_config(Config(dict(one_time_config)))
+
     items = config.options("ACQUIRE")
     for item in items:
        options = Config(dict(config.items(item.upper())))
@@ -69,6 +73,16 @@ class Config(dict):
        else:
           raise Exception('Missing config value %s' % key)
      return float(value)
+
+  def getBool(self, key, defaultValue=None):
+     value = self.get(key)
+     if not value:
+       if defaultValue != None:
+          return defaultValue
+       else:
+          raise Exception('Missing config value %s' % key)
+     return value.lower() in ['true', '1', 't', 'y', 'yes']
+
 
   def getList(self, key):
      return self.get(key).replace('\n','').split(',')

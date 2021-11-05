@@ -554,3 +554,9 @@ def do_scan(options):
     print "scan called %s" % options
     tc = ScanTestCoordinator(options)
     tc.take_images()
+
+def do_one_time_config(options):
+    print "one_time_config called %s" % options
+    if "idle_flush" in options:
+        idle_flush = options.getBool("idle_flush")
+        fp.fp.sequencerConfig().change("idleFlushTimeout", 0 if idle_flush else -1)
