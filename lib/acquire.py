@@ -556,6 +556,7 @@ def do_scan(options):
     tc.take_images()
 
 def do_one_time_config(options):
-    idle_flush = options.get("IDLE_FLUSH")
-    if idle_flush:
+    print "one_time_config called %s" % options
+    if "idle_flush" in options:
+        idle_flush = options.getBool("idle_flush")
         fp.fp.sequencerConfig().change("idleFlushTimeout", 0 if idle_flush else -1)
