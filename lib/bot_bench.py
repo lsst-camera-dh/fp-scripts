@@ -17,17 +17,17 @@ def sanityCheck():
 def setNDFilter(filter):
    sanityCheck()
    print "Setting ND filter "+filter
-   bb.NeutralFWheel().setNamedPosition(filter)
+#   bb.NeutralFWheel().setNamedPosition(filter)
 
 def setColorFilter(filter):
    sanityCheck()
    print "Setting Color filter "+filter
-   bb.ColorFWheel().setNamedPosition(filter)
+#   bb.ColorFWheel().setNamedPosition(filter)
 
 def setSpotFilter(filter):
    sanityCheck()
    print "Setting Spot filter "+filter
-   bb.SpotProjFWheel().setNamedPosition(filter)
+#   bb.SpotProjFWheel().setNamedPosition(filter)
 
 # Open the flat field projector shutter
 def openShutter(exposure):

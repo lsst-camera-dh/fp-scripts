@@ -160,6 +160,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
+            time.sleep(exposure*0.15) # wait for extra 15% of exposure time to make sure it is about to finish
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
@@ -345,14 +346,21 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.signalpersec = float(options.get('signalpersec'))
 
     def take_images(self):
         for point in self.points:
+            splittedpoints = point.split()
+            x = float(splittedpoints[0])
+            y = float(splittedpoints[1])
+            try:
+                self.locations = ",".join(splittedpoints[2].split("_"))
+            except:
+                self.locations = None
             if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
                 bot.moveTo(x, y)
             for exposure in self.exposures:
-                exposure = float(exposure)
+                exposure = float(exposure)/self.signalpersec
                 expose_command = lambda: bot_bench.openShutter(exposure)
                 for i in range(self.imcount):
                     self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%03.1f_%03.1f_%03.1f' % (x, y, exposure))
@@ -368,6 +376,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.signalpersec = float(options.get('signalpersec'))
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
@@ -380,13 +389,19 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            (x, y) = [float(x) for x in point.split()]
+            splittedpoints = point.split()
+            x = float(splittedpoints[0])
+            y = float(splittedpoints[1])
+            try:
+                self.locations = ",".join(splittedpoints[2].split("_"))
+            except:
+                self.locations = None
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
-                self.exposure1 = float(exposure1)
-                self.exposure2 = float(exposure2)
+                self.exposure1 = float(exposure1)/self.signalpersec
+                self.exposure2 = float(exposure2)/self.signalpersec
                 def expose_command():
                     self.set_filter(self.mask1)
                     bot_bench.openShutter(self.exposure1)
@@ -425,7 +440,7 @@ class ScanTestCoordinator(TestCoordinator):
             readRows = fp.fp.getSequencerParameter("ReadRows")
             postRows = fp.fp.getSequencerParameter("PostRows")
             scanMode = fp.fp.isScanEnabled()
-            idleFlushTimeout = fp.fp.getSequencerParameter("idleFlushTimeout")
+            idleFlushTimeout = fp.fp.getConfigurationParameterValue("sequencerConfig","idleFlushTimeout")
             print "Initial sequencer parameters"
 
             print "preCols="  , preCols
@@ -456,7 +471,7 @@ class ScanTestCoordinator(TestCoordinator):
                 "idleFlushTimeout": -1
                 }
             )
-            fp.fp.commitBulkChange()
+            fp.fp.applySubmittedChanges()
             if idleFlushTimeout != -1:
                 fp.clear()
 
@@ -473,7 +488,7 @@ class ScanTestCoordinator(TestCoordinator):
                 }
             )
             timeout= Duration.ofSeconds(60*5)
-            fp.fp.commitBulkChange(timeout=timeout)
+            fp.fp.applySubmittedChanges(timeout=timeout)
 
         for i in range(self.transparent):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
