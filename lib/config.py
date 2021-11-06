@@ -20,6 +20,12 @@ def setvoltages(avoltage):
   voltages.setvoltages(json.loads(avoltage))
 
 def execute(config, command_line_options):
+  symlink = command_line_options["symlink"]
+
+  if "CONFIG" in config.sections():
+    one_time_config = config.items("CONFIG")
+    acquire.do_one_time_config(Config(dict(one_time_config)))
+
   try:
     items = config.options("VOLTAGES")
     voltages = [ ( item, config.get("VOLTAGES",item) ) for item in items]
@@ -28,17 +34,12 @@ def execute(config, command_line_options):
     print("VOLTAGES Block not found.")
     voltages = [ None ]
 
-  symlink = command_line_options["symlink"]
   for args in voltages:
     if args is not None:
        alabel, avoltage = args
        setvoltages(avoltage)
        time.sleep(30)	# wait a bit for getting settled
        command_line_options["symlink"] = "/".join([symlink,alabel])
-
-    one_time_config = config.items("CONFIG")
-    if one_time_config:
-       acquire.do_one_time_config(Config(dict(one_time_config)))
 
     items = config.options("ACQUIRE")
     for item in items:
