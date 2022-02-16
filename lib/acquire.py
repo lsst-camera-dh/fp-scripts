@@ -3,7 +3,7 @@ import time
 import config
 import sys
 import fp
-#import ccob
+import ccob
 import bot
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
@@ -145,6 +145,9 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         self.lolim = options.getFloat('lolim',1.0)
         self.filterConfigFile = options.get('filterconfig','filter.cfg')
         self.filterConfig = config.Config(dict(config.parseConfig(self.filterConfigFile).items('FILTER')))
+        self.extra_delay_for_pd=self.extra_delay
+        self.extra_delay=0.
+
         if not self.filterConfig:
            raise Exception("Missing filter config file: %s" % self.filterConfigFile)
 
@@ -153,6 +156,10 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         bot_bench.setColorFilter(wl_filter)
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
+        if self.extra_delay_for_pd > 0:
+            print "Extra delay with PD %g" % self.extra_delay_for_pd
+            time.sleep(self.extra_delay_for_pd)
+
         use_pd = self.use_photodiodes and not self.noop
         if use_pd:
             pd_readout = PhotodiodeReadout(exposure)
@@ -298,7 +305,11 @@ class Fe55TestCoordinator(FlatFieldTestCoordinator):
                     bot_bench.openShutter(exposure) # Flat
                 bot_bench.openFe55Shutter(self.fe55exposure) # Fe55
             if not self.noop or self.skip - test_seq_num < self.fe55count*(self.bcount + 1):
-                self.set_filters(self.nd_filter, wl_filter)
+                try:
+                    self.set_filters(self.nd_filter, wl_filter)
+                except:
+                    print( "No flat projector installed??? taking an Fe55 image anyway")
+
             for i in range (self.fe55count):
                 self.take_bias_plus_image(exposure, expose_command, symlink_image_type='%s_flat_%s' % (wl_filter, e_per_pixel))
 
@@ -354,7 +365,7 @@ class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
             x = float(splittedpoints[0])
             y = float(splittedpoints[1])
             try:
-                self.locations = ",".join(splittedpoints[2].split("_"))
+                self.locations = LocationSet(",".join(splittedpoints[2].split("_")))
             except:
                 self.locations = None
             if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
@@ -393,7 +404,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
             x = float(splittedpoints[0])
             y = float(splittedpoints[1])
             try:
-                self.locations = ",".join(splittedpoints[2].split("_"))
+                self.locations = LocationSet(",".join(splittedpoints[2].split("_")))
             except:
                 self.locations = None
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
