@@ -3,9 +3,9 @@ import time
 import config
 import sys
 import fp
-import ccob
+#import ccob
 import bot
-from pd import PhotodiodeReadout
+#from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray
 from java.lang import String
@@ -14,12 +14,12 @@ from ccs import aliases
 from ccs import proxies
 from java.time import Duration
 import functools 
-bb = CCS.attachProxy("bot-bench")
-agentName = bb.getAgentProperty("agentName")
-if  agentName == "ts8-bench":
-    import ts8_bench as bot_bench
-elif agentName == "bot-bench":
-    import bot_bench
+#bb = CCS.attachProxy("bot-bench")
+#agentName = bb.getAgentProperty("agentName")
+#if  agentName == "ts8-bench":
+#    import ts8_bench as bot_bench
+#elif agentName == "bot-bench":
+#    import bot_bench
 
 # This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
 test_seq_num = 0
@@ -335,8 +335,8 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
+            (x, y) = [float(x) for x in point.split()]
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 (self.led, self.current, duration) = exposure.split()
