@@ -73,7 +73,8 @@ def startListener(ll):
   if agentName == "bot-motorplatform":
      CCS.addStatusBusListener(ll, lambda msg : msg.getOrigin() == agentName and msg.getClassName()=="org.lsst.ccs.bus.messages.StatusSubsystemData" and msg.getBusMessage().getDataKey()=="LampStatus") 
   else:
-     CCS.addStatusBusListener(ll, lambda msg: msg.getOrigin() == agentName and msg.getClassName()=="org.lsst.ccs.bus.messages.StatusSubsystemData" and msg.getBusMessage().getDataKey()=="AxisStatus" and msg.getBusMessage().getSubsystemData().getValue().getAxisName(  ) == ll.axis  )
+#     CCS.addStatusBusListener(ll, lambda msg: msg.getOrigin() == agentName and msg.getClassName()=="org.lsst.ccs.bus.messages.StatusSubsystemData" and msg.getBusMessage().getDataKey()=="AxisStatus" and msg.getBusMessage().getSubsystemData().getValue().getAxisName(  ) == ll.axis  )
+     CCS.addStatusBusListener(ll, lambda msg: msg.getOrigin() == agentName and msg.getClassName()=="org.lsst.ccs.bus.messages.StatusSubsystemData" and msg.getBusMessage().getDataKey()=="AxisStatus/"+ll.axis )
 
 def stopListener(ll):
   CCS.removeStatusBusListener(ll)

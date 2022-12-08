@@ -356,11 +356,11 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
         super(SpotTestCoordinator, self).__init__(options, 'SPOT_FLAT', 'SPOT')
         self.imcount = int(options.get('imcount', '1'))
-        xoffset = float(options.get('xoffset'))
-        yoffset = float(options.get('yoffset'))
+        self.xoffset = float(options.get('xoffset'))
+        self.yoffset = float(options.get('yoffset'))
         self.mask1 = options.get('mask1')
         self.mask2 = options.get('mask2', 'empty6')
-        bot.setLampOffset(xoffset, yoffset)
+#        bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
 
@@ -377,7 +377,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         for point in self.points:
             if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
                 (x, y) = [float(x) for x in point.split()]
-                bot.moveTo(x, y)
+                bot.moveTo(x+self.xoffset, y+self.yoffset)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
                 self.exposure1 = float(exposure1)
@@ -386,11 +386,12 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                     self.set_filter(self.mask1)
                     bot_bench.openShutter(self.exposure1)
                     if self.exposure2 != 0.:
+                        time.sleep(0.1)
                         self.set_filter(self.mask2)
                         bot_bench.openShutter(self.exposure2)
 
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask, self.exposure1, self.exposure2))
+                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.mask2, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):
     ''' A TestCoordinator for taking scan-mode images '''

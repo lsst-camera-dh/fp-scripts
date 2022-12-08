@@ -17,13 +17,17 @@ def sanityCheck():
 def setNDFilter(filter):
    sanityCheck()
    print "Setting 1 and 2 SlitWidth",filter
-   bb.Monochromator().setSlitSize(1,int(re.match(r"slit(\d+)",filter).group(1)))
-   bb.Monochromator().setSlitSize(2,int(re.match(r"slit(\d+)",filter).group(1)))
+   if filter == "unspecified":
+      return
+#   bb.Monochromator().setSlitSize(1,int(re.match(r"slit(\d+)",filter).group(1)))
+#   bb.Monochromator().setSlitSize(2,int(re.match(r"slit(\d+)",filter).group(1)))
+   bb.NeutralFWheel().setNamedPosition(filter)
 
 def setColorFilter(filter):
    sanityCheck()
    print "Setting color filter ",filter
-   bb.Monochromator().setWaveAndFilter(int(filter))
+#   bb.Monochromator().setWaveAndFilter(int(filter))
+   bb.ColorFWheel().setNamedPosition(filter)
 
 def setSpotFilter(filter):
    sanityCheck()
@@ -32,13 +36,17 @@ def setSpotFilter(filter):
 
 # Open the flat field projector shutter
 def openShutter(exposure):
-   open_delay  = 0.1
-   close_delay = 0.1
+   open_delay  = 0.01
+   close_delay = 0.01   # newport 76994 has 4ms/7ms open/close time
    sanityCheck()
    print "Open shutter for %s seconds" % exposure
-   bb.Monochromator().openShutter()
+#   bb.Monochromator().openShutter()
+   bb.ProjectorShutter().openShutter()
+#   bb.TS8Shutter().setShutterPosition(True)
    time.sleep(exposure)
-   bb.Monochromator().closeShutter()
+#   bb.Monochromator().closeShutter()
+   bb.ProjectorShutter().closeShutter()
+#   bb.TS8Shutter().setShutterPosition(False)
    time.sleep(close_delay)  # give time for shutter to close before readout starts
    print "Shutter closed"
 

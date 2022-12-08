@@ -4,9 +4,12 @@ from org.lsst.ccs.bus.states import AlertState
 from org.lsst.ccs.subsystem.focalplane.states import FocalPlaneState
 from java.time import Duration
 from ccs import proxies
+import jarray
+from java.lang import String
 #import bot_bench
 import array
 import os
+import time
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
 agentName = fp.getAgentProperty("agentName")
@@ -68,9 +71,22 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       extraData = exposeCommand()
       if extraData:
           fp.setHeaderKeywords(extraData)
-   fp.endIntegration()
+
+   try:
+      for i in range(3):
+         getattr(fp,"R22/Reb{}".format(i))().pauseMonitorTasks( jarray.array([ "all" ], String ) )
+      time.sleep(0.05)
+      fp.endIntegration()
+      im = fp.waitForFitsFiles(imageTimeout)
+
+   except:
+      raise
+
+   finally:
+      for i in range(3):
+         getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "all" ], String ) )
+
    if autoSave:
-     return (imageName, fp.waitForFitsFiles(imageTimeout))
+     return (imageName, im)
    else:
-     fp.waitForImages(imageTimeout)
      return (imageName, None)
