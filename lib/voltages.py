@@ -24,7 +24,7 @@ def setvoltages(avoltage):
 	for acommandtarget in avoltage:
 		fp.submitChanges(acommandtarget,avoltage[acommandtarget])
 		print(fp.getSubmittedChangesForComponent(acommandtarget))
-	fp.commitBulkChange()
+	fp.applySubmittedChanges()
 	for acommandtarget in list(set([ os.path.dirname(x) for x in avoltage.keys()])):
 		fp.commandTarget(acommandtarget).loadDeltaDacs(False)
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 		print(fp.commandTarget("R12/Reb0/DAC").printConfigurableParameters().keys())
 		fp.submitChanges("R12/Reb0/DAC",{ "pclkHighP": 2., "pclkLowP": -8.0 })
 		print(fp.getSubmittedChangesForComponent("R12/Reb0/DAC"))
-		fp.commitBulkChange()
+		fp.applySubmittedChanges()
 		fp.commandTarget("R12/Reb0").loadDeltaDacs(False)
 
 	except CommandInvocationException as ex:

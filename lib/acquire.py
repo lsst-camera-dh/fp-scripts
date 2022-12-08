@@ -168,7 +168,6 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
-            time.sleep(exposure*0.15) # wait for extra 15% of exposure time to make sure it is about to finish
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
@@ -381,11 +380,11 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
         super(SpotTestCoordinator, self).__init__(options, 'SPOT_FLAT', 'SPOT')
         self.imcount = int(options.get('imcount', '1'))
-        xoffset = float(options.get('xoffset'))
-        yoffset = float(options.get('yoffset'))
+        self.xoffset = float(options.get('xoffset'))
+        self.yoffset = float(options.get('yoffset'))
         self.mask1 = options.get('mask1')
         self.mask2 = options.get('mask2', 'empty6')
-        bot.setLampOffset(xoffset, yoffset)
+#        bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
         self.signalpersec = float(options.get('signalpersec'))
@@ -431,6 +430,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                     self.set_filter(self.mask1)
                     bot_bench.openShutter(self.exposure1) # this will block until the shutter gets closed
                     if self.exposure2 != 0.:
+                        time.sleep(0.1)
                         self.set_filter(self.mask2)
                         bot_bench.openShutter(self.exposure2)
                     if kwargs["move"] is not True or j+1==len(self.points):
@@ -439,6 +439,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
                     return kwargs
 
                 for i in range(self.imcount):
+
                     self.take_bias_plus_image(self.exposure1, functools.partial(expose_command,move=True if i==len(self.imcount)-1 else False), 
                                         symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.exposure1, self.exposure2))
 

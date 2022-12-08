@@ -37,9 +37,11 @@ def execute(config, command_line_options):
   for args in voltages:
     if args is not None:
        alabel, avoltage = args
+       print(symlink,alabel,avoltage)
        setvoltages(avoltage)
        time.sleep(30)	# wait a bit for getting settled
-       command_line_options["symlink"] = "/".join([symlink,alabel])
+       if symlink is not None:
+          command_line_options["symlink"] = "/".join([symlink,alabel])
 
     items = config.options("ACQUIRE")
     for item in items:

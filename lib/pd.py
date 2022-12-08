@@ -23,12 +23,19 @@ from ccs import proxies
 
 bbsub = CCS.attachProxy("bot-bench")
 
+##  The below 3 lines are needed for workaround.
+#agentName = "ts8-bench"
+#devName   = "PhotoDiode"
 agentName = bbsub.getAgentProperty("agentName")
 bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
-#bbsub.PhotoDiode = bbsub.Monitor2
-bbsub.PhotoDiode = bbsub.PhotoDiode2
-#devName = "Monitor2"
-devName = "PhotoDiode2"
+if  agentName == "ts8-bench":
+    bbsub.PhotoDiode = bbsub.Monitor2
+    devName = "Monitor2"
+# use Monitor2 anyway for both ts8-bench and bot-bench
+#bbsub.PhotoDiode = bbsub.Monitor
+#devName = "Monitor"
+
+#bbsub_PhotoDiode = CCS.attachSubsystem("ts8-bench/Monitor")
 
 __all__ = ["PhotodiodeReadout","logger"]
 
@@ -73,10 +80,11 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        if exptime > 0.5:
-            self.nplc = 1.0
-        else:
-            self.nplc = 0.25
+        self.nplc = 1.0
+#        if exptime > 0.5:
+#            self.nplc = 1.0
+#        else:
+#            self.nplc = 0.25
 
 # a value of 5 was used before
         self.navg = int(1)
@@ -180,7 +188,8 @@ class PhotodiodeReadout(object):
         logger.info("Photodiode about to be readout at %f",
                          time.time() - self.start_time)
         start_read = time.time()
-        readTimeout = Duration.ofSeconds(1000)
+#        readTimeout = Duration.ofSeconds(59)
+        readTimeout = Duration.ofSeconds(60)
         result = bbsub.PhotoDiode().readBuffer( pd_filename, timeout=readTimeout)
         logger.info("PD_complete_at %f nreads= %d nplc= %f read_time= %f",
                          time.time()-self.start_time,self.nreads,self.nplc,time.time()-start_read)
