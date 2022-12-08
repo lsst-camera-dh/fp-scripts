@@ -20,6 +20,12 @@ def setvoltages(avoltage):
   voltages.setvoltages(json.loads(avoltage))
 
 def execute(config, command_line_options):
+  symlink = command_line_options["symlink"]
+
+  if "CONFIG" in config.sections():
+    one_time_config = config.items("CONFIG")
+    acquire.do_one_time_config(Config(dict(one_time_config)))
+
   try:
     items = config.options("VOLTAGES")
     voltages = [ ( item, config.get("VOLTAGES",item) ) for item in items]
@@ -28,7 +34,6 @@ def execute(config, command_line_options):
     print("VOLTAGES Block not found.")
     voltages = [ None ]
 
-  symlink = command_line_options["symlink"]
   for args in voltages:
     if args is not None:
        alabel, avoltage = args
@@ -71,6 +76,16 @@ class Config(dict):
        else:
           raise Exception('Missing config value %s' % key)
      return float(value)
+
+  def getBool(self, key, defaultValue=None):
+     value = self.get(key)
+     if not value:
+       if defaultValue != None:
+          return defaultValue
+       else:
+          raise Exception('Missing config value %s' % key)
+     return value.lower() in ['true', '1', 't', 'y', 'yes']
+
 
   def getList(self, key):
      return self.get(key).replace('\n','').split(',')

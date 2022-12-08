@@ -32,7 +32,6 @@ if  agentName == "ts8-bench":
     devName = "Monitor2"
 #bbsub_PhotoDiode = CCS.attachSubsystem("ts8-bench/Monitor")
 
-
 cmds = """
 reset
 send :INP:STAT ON

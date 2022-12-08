@@ -11,6 +11,10 @@ import time
 import array
 import os
 import time
+import bot
+
+CLEARDELAY=0.07
+#CLEARDELAY=2.35
 
 fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
 agentName = fp.getAgentProperty("agentName")
@@ -18,7 +22,7 @@ if agentName != "focal-plane":
    fp = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 autoSave = True
 imageTimeout = Duration.ofSeconds(60)
-symlinkToFast = False
+symlinkToFast = True
 # These need to be changed when we switch R_and_D -> rawData
 symLinkFromLocation = "/gpfs/slac/lsst/fs3/g/data/rawData/focal-plane/"
 symLinkToLocation = "/gpfs/slac/lsst/fs3/g/fast/rawData/focal-plane/"
@@ -68,7 +72,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
 
    fp.clearAndStartNamedIntegration(imageName, clears, annotation, locations)
    # Sleep for 70 ms to allow for clear which is part of integrate to complete
-   time.sleep(0.07)
+   time.sleep(CLEARDELAY)
 
    if exposeCommand:
       extraData = exposeCommand()
@@ -92,4 +96,8 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    if autoSave:
      return (imageName, im)
    else:
+
+     if ("move", True ) in extraData.items(): # if the stages was asked to move, we'll wait
+        bot.waitForMove()
+     fp.waitForImages(imageTimeout)
      return (imageName, None)

@@ -27,7 +27,6 @@ bbsub = CCS.attachProxy("bot-bench")
 #agentName = "ts8-bench"
 #devName   = "PhotoDiode"
 agentName = bbsub.getAgentProperty("agentName")
-#if  agentName != "bot-bench":
 bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
 if  agentName == "ts8-bench":
     bbsub.PhotoDiode = bbsub.Monitor2
