@@ -36,6 +36,7 @@ class TestCoordinator(object):
         self.annotation = options.get('annotation','')
         self.locations = LocationSet(options.get('locations',''))
         self.clears = options.getInt('clears', 1)
+        self.extra_delay = options.getFloat('extradelay', 0)
 
     def take_images(self):
         pass
@@ -69,6 +70,10 @@ class TestCoordinator(object):
         if test_seq_num >= self.limit:
             print "Stopping since --limit reached before tSeqNum = %d" % test_seq_num
             sys.exit()
+
+        if self.extra_delay > 0:
+            print "Extra delay %g" % self.extra_delay
+            time.sleep(self.extra_delay)
 
         if not self.noop:
             fits_header_data = self.create_fits_header_data(exposure, image_type)
@@ -363,6 +368,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 #        bot.setLampOffset(xoffset, yoffset)
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
+        self.signalpersec = float(options.get('signalpersec'))
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
@@ -375,13 +381,19 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
-                bot.moveTo(x+self.xoffset, y+self.yoffset)
+            splittedpoints = point.split()
+            x = float(splittedpoints[0])
+            y = float(splittedpoints[1])
+            try:
+                self.locations = ",".join(splittedpoints[2].split("_"))
+            except:
+                self.locations = None
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
+                bot.moveTo(x, y)
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
-                self.exposure1 = float(exposure1)
-                self.exposure2 = float(exposure2)
+                self.exposure1 = float(exposure1)/self.signalpersec
+                self.exposure2 = float(exposure2)/self.signalpersec
                 def expose_command():
                     self.set_filter(self.mask1)
                     bot_bench.openShutter(self.exposure1)

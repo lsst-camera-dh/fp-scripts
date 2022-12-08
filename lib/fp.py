@@ -7,6 +7,7 @@ from ccs import proxies
 import jarray
 from java.lang import String
 #import bot_bench
+import time
 import array
 import os
 import time
@@ -66,6 +67,8 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       os.symlink(newLocation, oldLocation+imageName.toString())
 
    fp.clearAndStartNamedIntegration(imageName, clears, annotation, locations)
+   # Sleep for 70 ms to allow for clear which is part of integrate to complete
+   time.sleep(0.07)
 
    if exposeCommand:
       extraData = exposeCommand()
