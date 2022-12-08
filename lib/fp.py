@@ -8,6 +8,7 @@ from ccs import proxies
 import time
 import array
 import os
+import bot
 
 CLEARDELAY=0.07
 #CLEARDELAY=2.35
@@ -78,5 +79,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    if autoSave:
      return (imageName, fp.waitForFitsFiles(imageTimeout))
    else:
+     if ("move", True ) in extraData.items(): # if the stages was asked to move, we'll wait
+        bot.waitForMove()
      fp.waitForImages(imageTimeout)
      return (imageName, None)

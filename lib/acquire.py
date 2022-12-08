@@ -3,9 +3,9 @@ import time
 import config
 import sys
 import fp
-import ccob
+#import ccob
 import bot
-from pd import PhotodiodeReadout
+#from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray
 from java.lang import String
@@ -13,12 +13,13 @@ from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
 from java.time import Duration
-bb = CCS.attachProxy("bot-bench")
-agentName = bb.getAgentProperty("agentName")
-if  agentName == "ts8-bench":
-    import ts8_bench as bot_bench
-elif agentName == "bot-bench":
-    import bot_bench
+import functools 
+#bb = CCS.attachProxy("bot-bench")
+#agentName = bb.getAgentProperty("agentName")
+#if  agentName == "ts8-bench":
+#    import ts8_bench as bot_bench
+#elif agentName == "bot-bench":
+#    import bot_bench
 
 # This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
 test_seq_num = 0
@@ -334,8 +335,8 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
         for point in self.points:
-            if not self.noop or self.skip - test_seq_num < self.exposures*self.imcount*(self.bcount + 1):
-                (x, y) = [float(x) for x in point.split()]
+            (x, y) = [float(x) for x in point.split()]
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 bot.moveTo(x, y)
             for exposure in self.exposures:
                 (self.led, self.current, duration) = exposure.split()
@@ -388,6 +389,8 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         self.exposures = options.getList('expose')
         self.points = options.getList('point')
         self.signalpersec = float(options.get('signalpersec'))
+        self.stagex = 0
+        self.stagey = 0
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(SpotTestCoordinator, self).create_fits_header_data(exposure, image_type)
@@ -399,29 +402,45 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         bot_bench.setSpotFilter(mask_filter)
 
     def take_images(self):
-        for point in self.points:
+        def moveTo( point ):
+            """a wrappter to "moveTo" to store the current position so that it can judge if the stage needs to move or not"""
             splittedpoints = point.split()
             x = float(splittedpoints[0])
             y = float(splittedpoints[1])
+            if self.stagex == x and self.stagey == y:
+                return
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
+                bot.moveTo(x, y)
+                self.stagex = x # store current positions
+                self.stagey = y
+
+        for j in range(len(self.points)):
+            point = self.points[j]
+            moveTo( point )
+ 
             try:
                 self.locations = LocationSet(",".join(splittedpoints[2].split("_")))
             except:
                 self.locations = None
-            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
-                bot.moveTo(x, y)
+
             for exposure in self.exposures:
                 (exposure1, exposure2) = exposure.split()
                 self.exposure1 = float(exposure1)/self.signalpersec
                 self.exposure2 = float(exposure2)/self.signalpersec
-                def expose_command():
+                def expose_command(**kwargs):
                     self.set_filter(self.mask1)
-                    bot_bench.openShutter(self.exposure1)
+                    bot_bench.openShutter(self.exposure1) # this will block until the shutter gets closed
                     if self.exposure2 != 0.:
                         self.set_filter(self.mask2)
                         bot_bench.openShutter(self.exposure2)
+                    if kwargs["move"] is not True or j+1==len(self.points):
+                        return kwargs
+                    moveTo(self.points[j+1]) # move to the next position
+                    return kwargs
 
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(self.exposure1, expose_command, symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.exposure1, self.exposure2))
+                    self.take_bias_plus_image(self.exposure1, functools.partial(expose_command,move=True if i==len(self.imcount)-1 else False), 
+                                        symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):
     ''' A TestCoordinator for taking scan-mode images '''
