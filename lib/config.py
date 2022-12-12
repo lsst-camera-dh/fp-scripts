@@ -89,3 +89,5 @@ class Config(dict):
 
   def getList(self, key):
      return self.get(key).replace('\n','').split(',')
+
+

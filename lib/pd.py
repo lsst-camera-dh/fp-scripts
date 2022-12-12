@@ -21,7 +21,7 @@ from ccs_scripting_tools import CcsSubsystems, CCS
 from ccs import aliases
 from ccs import proxies
 
-bbsub = CCS.attachProxy("bot-bench")
+bbsub = CCS.attachProxy("ccob")
 
 ##  The below 3 lines are needed for workaround.
 #agentName = "ts8-bench"
