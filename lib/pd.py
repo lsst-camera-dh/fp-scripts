@@ -80,7 +80,7 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        self.nplc = 1.0
+        self.nplc = .1
 #        if exptime > 0.5:
 #            self.nplc = 1.0
 #        else:
@@ -189,7 +189,7 @@ class PhotodiodeReadout(object):
                          time.time() - self.start_time)
         start_read = time.time()
 #        readTimeout = Duration.ofSeconds(59)
-        readTimeout = Duration.ofSeconds(60)
+        readTimeout = Duration.ofSeconds(120)
         result = bbsub.PhotoDiode().readBuffer( pd_filename, timeout=readTimeout)
         logger.info("PD_complete_at %f nreads= %d nplc= %f read_time= %f",
                          time.time()-self.start_time,self.nreads,self.nplc,time.time()-start_read)

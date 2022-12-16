@@ -39,10 +39,11 @@ send :INP:STAT ON
 waitAccum 20
 send TRAC:FEED:CONT NEV
 send :TRIG:SOUR TIM
-send :TRIG:TIM 0.0167
+send :TRIG:TIM 0.00167
 send :SENS:CURR:MED:RANK 1
 send :SENS:CURR:MED:STAT 1
 """
+
 
 for acmd in cmds.split("\n"):
 	if len(acmd)==0:

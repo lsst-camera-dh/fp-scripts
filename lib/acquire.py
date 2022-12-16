@@ -5,6 +5,7 @@ import sys
 import fp
 import ccob
 import bot
+import math
 from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray
@@ -137,10 +138,14 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         self.use_photodiodes = True
         self.hilim = options.getFloat('hilim',999.0)
         self.lolim = options.getFloat('lolim',1.0)
-        self.filterConfigFile = options.get('filterconfig','filter.cfg')
-        self.filterConfig = config.Config(dict(config.parseConfig(self.filterConfigFile).items('FILTER')))
+        self.ledConfigFile = options.get('filterconfig','filter.cfg')
+        self.ledConfig = config.Config(dict(config.parseConfig(self.ledConfigFile).items('WBLED')))
+        self.currentConfig = config.Config(dict(config.parseConfig(self.ledConfigFile).items('WBCURRENT')))
         self.camerashutter=options.get('camerashutter')
         self.ccobmode=options.get('ccobmode')
+        self.exposure = options.getFloat('exposure',15.0)
+        self.led = None
+        self.current = None
         if self.ccobmode is not "spanShutter":
             self.expose_command = self.waitForShutter
         else:
@@ -149,8 +154,20 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         self.extra_delay_for_pd=self.extra_delay
         self.extra_delay=0.
 
-        if not self.filterConfig:
-           raise Exception("Missing filter config file: %s" % self.filterConfigFile)
+        if not self.ledConfig:
+           raise Exception("Missing filter config file: %s" % self.ledConfigFile)
+
+    # Insert additional CCOB specific FITS file data
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(FlatFieldTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({
+			'CCOBLED': self.wl_led,
+			'CCOBCURR': self.current,
+			'CCOBFLASHT': self.flashtime,
+			'TGTFLUX': self.e_per_pixel
+			})
+        return data
 
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
         if self.extra_delay_for_pd > 0:
@@ -167,32 +184,36 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
             pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
         return (image_name, file_list)
 
-    def spanShutter(self, wl_led, current,flashtime, exposure):
+    def spanShutter(self, exposure):
         print "Span mode"
-        ccob.turnOnLed(self.wl_led,current)
+        ccob.turnOnLed(self.wl_led,self.current)
         # open the shutter
         time.sleep(exposure)
         ### is there a way to check if the shutter closed?
         ccob.turnOffLed()
 
-    def waitForShutter(self, wl_led, current,flashtime, exposure):
-        print "CCOB will flash %s for %g sec with %g A" % ( wl_led, flashtime, current  )
+    def waitForShutter(self, exposure):
+        print "CCOB will flash %s for %g sec with %g A" % ( self.wl_led, self.flashtime, self.current  )
         print "Flash mode"
-        ccob.prepLED(wl_led,current,flashtime)
-        # for waitForShutter mode, the shutter must be actuated here, and make sure it completed
-        ccob.driver.startExposure()
-        time.sleep(exposure)
-        adc=ccob.WaitAndReadLED()
-        return adc
+        
+        return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
+
+    def compute_current(self, wl_led, e_per_pixel):
+        e_per_pixel = float(e_per_pixel)
+        source = self.ledConfig.getFloat("source")
+        wlf = self.ledConfig.getFloat(wl_led.lower())
+        m,b = self.currentConfig.getList(wl_led)[0].split()
+        current=math.exp(int(math.log(max(e_per_pixel/source/(0.1)/wlf-float(b),1)/float(m))))
+        return max(min(current,0.273),0.002)
 
     def compute_exposure_time(self, current, wl_led, e_per_pixel):
-        #### NEED TO CHANGE THIS 
         #### compute exposure time based on an emprical polynomial of brightness as a function of currents
         e_per_pixel = float(e_per_pixel)
-        source = self.filterConfig.getFloat("source")
-        dnf = 1.
-        wlf = self.filterConfig.getFloat(wl_led.lower())
-        seconds = e_per_pixel/source/dnf/wlf
+        self.e_per_pixel=e_per_pixel
+        source = self.ledConfig.getFloat("source")
+        wlf = self.ledConfig.getFloat(wl_led.lower())
+        m,b= self.currentConfig.getList(wl_led)[0].split()
+        seconds = e_per_pixel/source/(current*float(m)+float(b))/wlf
         if seconds>self.hilim:
            print "Warning: exposure time %g > hilim (%g)" % (seconds, self.hilim)
            seconds = self.hilim
@@ -211,19 +232,22 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
 
     def take_images(self):
         for flat in self.flats:
-            exposure , e_per_pixel, current = flat.split()
-            exposure = float(exposure)
-            e_per_pixel = float(e_per_pixel)
-            current = float(current)
-            flashtime = self.compute_exposure_time(current, self.wl_led, e_per_pixel)
+            ret = flat.split()
+            self.exposure = float(ret[0])
+            e_per_pixel = float(ret[1])
+            if len(ret)==3:
+               self.current = float(ret[2])
+            else:
+               self.current = self.compute_current(self.wl_led, e_per_pixel)
+            self.flashtime = self.compute_exposure_time(self.current, self.wl_led, e_per_pixel)
 
-            expose_command = lambda: self.expose_command(self.wl_led,current,flashtime,exposure)
+            expose_command = lambda: self.expose_command(self.exposure)
 
             if not self.noop or self.skip - test_seq_num < self.bcount + 2:
                 pass
             self.take_bias_images(self.bcount)
             for pair in range(2):
-                self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (current, self.wl_led, e_per_pixel, pair))
+                self.take_image(self.exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (self.current, self.wl_led, e_per_pixel, pair))
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
@@ -235,23 +259,33 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
 
     def low_or_high(self, e_per_pixel):
         if self.approx_equals(e_per_pixel, 1000):
+            self.test_type="SFLAT_LO"
             return 'L'
         elif self.approx_equals(e_per_pixel, 50000):
+            self.test_type="SFLAT_HI"
             return 'H'
         else:
             return '?'
 
     def take_images(self):
         for sflat in self.sflats:
-            wl_led, e_per_pixel, count, current = sflat.split()
+            ret = sflat.split()
+            self.wl_led = ret[0]
+            e_per_pixel = float(ret[1])
+            count = float(ret[2]) 
+            if len(ret)==4:
+                self.current=float(ret[3])
+            else:
+                self.current = self.compute_current(self.wl_led, e_per_pixel)
+
             count = int(count)
             e_per_pixel = float(e_per_pixel)
-            exposure = self.compute_exposure_time(current, wl_led, e_per_pixel)
-            expose_command = lambda: bot_bench.openShutter(exposure)
+            self.flashtime = self.compute_exposure_time(self.current, self.wl_led, e_per_pixel)
+            expose_command = lambda: self.expose_command(self.exposure)
             if not self.noop or self.skip - test_seq_num < count*(self.bcount + 1):
                 pass
             for c in range(count):
-                self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s'% (wl_led, self.low_or_high(e_per_pixel)))
+                self.take_bias_plus_image(self.exposure, expose_command, symlink_image_type='flat_%s_%s'% (self.wl_led, self.low_or_high(e_per_pixel)))
 
 class LambdaTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
@@ -261,12 +295,18 @@ class LambdaTestCoordinator(FlatFieldTestCoordinator):
 
     def take_images(self):
         for lamb in self.lambdas:
-            wl_led, e_per_pixel, current = lamb.split()
-            exposure = self.compute_exposure_time(current, wl_led, e_per_pixel)
-            expose_command = lambda: bot_bench.openShutter(exposure)
+            ret = lamb.split()
+            self.wl_led = ret[0]
+            e_per_pixel = float(ret[1])
+            if len(ret)==3:
+                self.current = float(ret[2])
+            else:
+                self.current = self.compute_current(self.wl_led, e_per_pixel)
+            self.flashtime = self.compute_exposure_time(self.current, self.wl_led, e_per_pixel)
+            expose_command = lambda: self.expose_command(self.exposure)
             if not self.noop or self.skip - test_seq_num < self.bcount + 1:
                 pass
-            self.take_bias_plus_image(exposure, expose_command, symlink_image_type='flat_%s_%s' % (wl_led, e_per_pixel))
+            self.take_bias_plus_image(self.exposure, expose_command, symlink_image_type='flat_%s_%s' % (self.wl_led, e_per_pixel))
 
 class PersistenceTestCoordinator(FlatFieldTestCoordinator):
     ''' A TestCoordinator for all tests that involve taking persitence with the flat field generator '''
@@ -274,20 +314,20 @@ class PersistenceTestCoordinator(FlatFieldTestCoordinator):
         super(PersistenceTestCoordinator, self).__init__(options, "BOT_PERSISTENCE", "FLAT")
         self.bcount = options.getInt('bcount', 10)
         self.wl_led = options.get('wl')
-        self.current= options.get('nd')
         self.persistence= options.getList('persistence')
 
     def take_images(self):
         e_per_pixel, n_of_dark, exp_of_dark, t_btw_darks= self.persistence[0].split()
         e_per_pixel = float(e_per_pixel)
-        exposure = self.compute_exposure_time(self.current, self.wl_led, e_per_pixel)
+        self.current = self.compute_current(self.wl_led, e_per_pixel)
+        self.flashtime = self.compute_exposure_time(self.current, self.wl_led, e_per_pixel)
 
         # bias acquisitions
         self.take_bias_images(self.bcount)
 
         # dark acquisition
-        expose_command = lambda: bot_bench.openShutter(exposure)
-        image_name, file_list = super(PersistenceTestCoordinator, self).take_image(exposure, expose_command, "FLAT",  symlink_image_type='flat_%s'% (self.wl_led))
+        expose_command = lambda: self.expose_command(self.exposure)
+        image_name, file_list = super(PersistenceTestCoordinator, self).take_image(self.exposure, expose_command, "FLAT",  symlink_image_type='flat_%s'% (self.wl_led))
 
         # dark acquisition
         self.use_photodiodes = False
