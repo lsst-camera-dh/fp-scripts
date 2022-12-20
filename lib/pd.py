@@ -121,7 +121,7 @@ class PhotodiodeReadout(object):
         """
 
 
-        bbsub.PhotoDiode().setCurrentRange(2e-8)
+        bbsub.PhotoDiode().setCurrentRange(2e-7)
         bbsub.PhotoDiode().clrbuff()
         logger.info("AVER settings are happening with navg = %d",self.navg)
 
