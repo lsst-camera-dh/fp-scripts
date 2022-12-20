@@ -1,6 +1,7 @@
 #!/usr/bin/env ccs-script
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
+from org.lsst.ccs.utilities.taitime import CCSTimeStamp
 from java.time import Duration
 from ccs import proxies
 import time
@@ -22,7 +23,7 @@ def turnOnLed(led="red", current=0.009):
    driver.shutter()
    driver.startExposure()
    global t1
-   t1=time.time()
+   t1 = CCSTimeStamp.currentTime()
 
 def turnOffLed():
    driver.pulse()
@@ -41,8 +42,9 @@ def prepLED(led="red", current=0.009, seconds=0.05):
 def WaitAndReadLED():
    while driver.pollEnd():
       time.sleep(0.1) # hopefully that is long enough?
-   t2=time.time()
+   t2 = CCSTimeStamp.currentTime()
    after = driver.getAdcValues()
+   driver.setLedCurrent(0.0)    # not to overheat the board
    return {
        "CCOBADC": after.getPhotodiodeCurrent(),
 #       "CCOBCURR": after.getLedCurrent(),
@@ -51,7 +53,7 @@ def WaitAndReadLED():
        "CCOBTMPLED2": after.getTempLed2(),
        "CCOBLEDV": after.getLedVoltage(),
        "CCOBLEDVREF": after.getLedVref(),
-       "PROJTIME": t2-t1,
+       "PROJTIME": t2.getTAIDouble()-t1.getTAIDouble(),
        "MJD-PBEG": t1,
        "MJD-PEND": t2
    }
@@ -64,7 +66,7 @@ def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15):
    prepLED(led, current, seconds)
    global t1
    driver.startExposure()
-   t1=time.time()
+   t1 = CCSTimeStamp.currentTime()
    time.sleep(seconds)
    adc=WaitAndReadLED()
 
