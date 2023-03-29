@@ -58,18 +58,22 @@ def WaitAndReadLED():
        "MJD-PEND": t2
    }
 
-def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15):
+def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15, maxtime=1.3):
    t=Thread(target=time.sleep,args=[exptime])
    t.daemon=True
    t.start()
 
-   prepLED(led, current, seconds)
    global t1
-   driver.startExposure()
    t1 = CCSTimeStamp.currentTime()
-   time.sleep(seconds)
-   adc=WaitAndReadLED()
+   accum=0.
+   for subflash in [ maxtime for i in range(int(seconds/maxtime)) ]+[seconds%maxtime]: # divide a longer flash than maxtime to multiple flashes
+      prepLED(led, current, subflash)
+      driver.startExposure()
+      time.sleep(subflash)
+      adc=WaitAndReadLED()
+      accum+=adc["CCOBADC"]
 
    t.join()
+   adc["CCOBADC"]=accum
    return adc
 

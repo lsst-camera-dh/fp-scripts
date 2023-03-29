@@ -81,7 +81,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
 
    try:
       for i in range(3):
-         getattr(fp,"R22/Reb{}".format(i))().pauseMonitorTasks( jarray.array([ "all" ], String ) )
+         getattr(fp,"R22/Reb{}".format(i))().pauseMonitorTasks( jarray.array([ "R22/Reb{}".format(i) ], String ) )
       time.sleep(0.05)
       fp.endIntegration()
       im = fp.waitForFitsFiles(imageTimeout)
@@ -90,8 +90,9 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       raise
 
    finally:
-      for i in range(3):
-         getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "all" ], String ) )
+      pass
+      for i in range(3): 
+         getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "R22/Reb{}".format(i) ], String ) )
 
    if autoSave:
      return (imageName, im)

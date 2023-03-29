@@ -80,7 +80,8 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        self.nplc = .1
+#        self.nplc = .1
+        self.nplc = 1
 #        if exptime > 0.5:
 #            self.nplc = 1.0
 #        else:

@@ -11,7 +11,7 @@ try:
   agentName = bot.getAgentProperty("agentName")
 
 except:
-  print "%s not available, attempting to continue" % ( agentName )
+  print "%s not available, attempting to continue" % ( "bot-motorplatform" )
 #  raise
 
 def sanityCheck():
