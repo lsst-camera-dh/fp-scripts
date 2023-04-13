@@ -11,10 +11,11 @@ from org.lsst.ccs.utilities.location import LocationSet
 import jarray
 from java.lang import String
 from org.lsst.ccs.scripting import CCS
+from ccob_thin import (X, Y, U, B, CcobThin)
 from ccs import aliases
 from ccs import proxies
 from java.time import Duration
-import functools 
+import functools
 # This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
 test_seq_num = 0
 
@@ -195,7 +196,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     def waitForShutter(self, exposure):
         print "CCOB will flash %s for %g sec with %g A" % ( self.wl_led, self.flashtime, self.current  )
         print "Flash mode"
-        
+
         return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
 
     def compute_current(self, wl_led, e_per_pixel):
@@ -273,7 +274,7 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
             ret = sflat.split()
             self.wl_led = ret[0]
             e_per_pixel = float(ret[1])
-            count = float(ret[2]) 
+            count = float(ret[2])
             if len(ret)==4:
                 self.current=float(ret[3])
             else:
@@ -406,6 +407,36 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
                 for i in range(self.imcount):
                     self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
 
+class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
+    def __init__(self, options):
+        super(CCOBTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
+        self.imcount = int(options.get('imcount', '1'))
+        self.shots = options.getList('shots')
+        self.ccob_thin = CcobThin("ccob-thin")
+
+    # Insert additional CCOB Narrow specific FITS file data
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(CCOBTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
+        return data
+
+    def take_images(self):
+        for shot in self.shots:
+            (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
+            if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
+                self.ccob_thin.moveTo(X, float(x))
+                self.ccob_thin.moveTo(Y, float(y))
+                self.ccob_thin.moveTo(B, float(b))
+                self.ccob_thin.moveTo(U, float(u))
+            self.locations = LocationSet(locations)
+            self.current = float(self.current)
+            duration = float(expose_time)
+            def expose_command():
+                adc = ccob.fireLED(self.led, self.current, duration)
+                return {"CCOBADC": adc}
+            for i in range(self.imcount):
+                self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
@@ -475,7 +506,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         for j in range(len(self.points)):
             point = self.points[j]
             moveTo( point )
- 
+
             try:
                 self.locations = LocationSet(",".join(splittedpoints[2].split("_")))
             except:
@@ -499,7 +530,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
                 for i in range(self.imcount):
 
-                    self.take_bias_plus_image(self.exposure1, functools.partial(expose_command,move=True if i==len(self.imcount)-1 else False), 
+                    self.take_bias_plus_image(self.exposure1, functools.partial(expose_command,move=True if i==len(self.imcount)-1 else False),
                                         symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):
@@ -628,6 +659,18 @@ def do_lambda(options):
 def do_ccob(options):
     print "ccob called %s" % options
     tc = CCOBTestCoordinator(options)
+    tc.take_images()
+
+# This does not actually result in any images.
+# Is treating it as a separate test type appropriate?
+def do_ccob_pd_calibrate(options):
+    print "ccob pd calibrate called %s" % options
+    tc = CCOBThinCalibrateTestCoordinator(options)
+    tc.take_images()
+
+def do_ccob_narrow(options):
+    print "ccob narrow called %s" % options
+    tc = CCOBNarrowTestCoordinator(options)
     tc.take_images()
 
 def do_xtalk(options):
