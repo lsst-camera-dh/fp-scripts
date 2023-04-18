@@ -258,7 +258,7 @@ class _SubsystemHandle:
         # commands, including motion commands, don't return until the command is completed.
         # So we need a pretty big timeout to cover long moves.
         # Might want to change this to an adjustable timeout after we get some more experience.
-        timeout = Duration.ofSeconds(60)
+        timeout = Duration.ofSeconds(120)
         return self._subsysHandle.sendSynchCommand(timeout, cmd, *args)
 
 
