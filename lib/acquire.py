@@ -421,7 +421,20 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
             data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
         return data
 
+    def calibrate(self, wavelengths, duration):
+        picovals = []
+        self.ccob_thin.hyperOpenFastShutter()
+        self.ccob_thin.diodeOn()
+        for wavelength in wavelengths:
+           self.ccob_thin.hyperSetWavelength(str(wavelength))
+           picovals.append(self.ccob_thin.picoReadCurrent())
+        self.ccob_thin.diodeOff()
+        self.ccob_thin.hyperCloseFastShutter()
+        print(picovals)
+
     def take_images(self):
+
+        self.calibrate([300, 400, 500], 0.2)
         for shot in self.shots:
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
             print "Moving to b=%s u=%s x=%s y=%s" % (b, u, x, y)
@@ -430,7 +443,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                 self.ccob_thin.moveTo(Y, float(y), 10)
                 self.ccob_thin.moveTo(B, float(b), 5)
                 self.ccob_thin.moveTo(U, float(u), 10)
-            print "Move done" 		
+            print "Move done"
 #            self.locations = LocationSet(locations)
 #            self.current = float(self.current)
 #            duration = float(expose_time)
