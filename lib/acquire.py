@@ -425,6 +425,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         picovals = []
         self.ccob_thin.hyperOpenFastShutter()
         self.ccob_thin.diodeOn()
+        self.ccob_thin.picoSetTime(duration)
         for wavelength in wavelengths:
            self.ccob_thin.hyperSetWavelength(str(wavelength))
            picovals.append(self.ccob_thin.picoReadCurrent())
@@ -434,7 +435,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
 
-        self.calibrate([300, 400, 500], 0.2)
+        self.calibrate([300, 400, 500], 200)
         for shot in self.shots:
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
             print "Moving to b=%s u=%s x=%s y=%s" % (b, u, x, y)
