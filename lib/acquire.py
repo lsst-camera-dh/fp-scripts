@@ -3,10 +3,10 @@ import time
 import config
 import sys
 import fp
-import ccob
-import bot
+#import ccob
+#import bot
 import math
-from pd import PhotodiodeReadout
+#from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray
 from java.lang import String
@@ -409,7 +409,7 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
 
 class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
-        super(CCOBTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
+        super(CCOBNarrowTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
         self.imcount = int(options.get('imcount', '1'))
         self.shots = options.getList('shots')
         self.ccob_thin = CcobThin("ccob-thin")
@@ -424,19 +424,21 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
     def take_images(self):
         for shot in self.shots:
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
+            print "Moving to b=%s u=%s x=%s y=%s" % (b, u, x, y)
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
-                self.ccob_thin.moveTo(X, float(x))
-                self.ccob_thin.moveTo(Y, float(y))
-                self.ccob_thin.moveTo(B, float(b))
-                self.ccob_thin.moveTo(U, float(u))
-            self.locations = LocationSet(locations)
-            self.current = float(self.current)
-            duration = float(expose_time)
-            def expose_command():
-                adc = ccob.fireLED(self.led, self.current, duration)
-                return {"CCOBADC": adc}
-            for i in range(self.imcount):
-                self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
+                self.ccob_thin.moveTo(X, float(x), 10)
+                self.ccob_thin.moveTo(Y, float(y), 10)
+                self.ccob_thin.moveTo(B, float(b), 5)
+                self.ccob_thin.moveTo(U, float(u), 10)
+            print "Move done" 		
+#            self.locations = LocationSet(locations)
+#            self.current = float(self.current)
+#            duration = float(expose_time)
+#            def expose_command():
+#                adc = ccob.fireLED(self.led, self.current, duration)
+#                return {"CCOBADC": adc}
+#            for i in range(self.imcount):
+#                self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
