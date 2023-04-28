@@ -79,21 +79,28 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       if extraData:
           fp.setHeaderKeywords(extraData)
 
+   success = False
    try:
       for i in range(3):
          getattr(fp,"R22/Reb{}".format(i))().pauseMonitorTasks( jarray.array([ "R22/Reb{}".format(i) ], String ) )
       time.sleep(0.05)
       fp.endIntegration()
+      fp.waitForSequencer()
+      for i in range(3): 
+          getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "R22/Reb{}".format(i) ], String ) )
       im = fp.waitForFitsFiles(imageTimeout)
+      success = True
 
    except:
       raise
-
    finally:
-      pass
-      for i in range(3): 
-         getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "R22/Reb{}".format(i) ], String ) )
-
+      if success:
+          pass
+      else:
+          for i in range(3):
+              getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "R22/Reb{}".format(i) ], String ) )
+   
+   
    if autoSave:
      return (imageName, im)
    else:
