@@ -204,7 +204,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         wlf = self.ledConfig.getFloat(wl_led.lower())
         m,b = self.currentConfig.getList(wl_led)[0].split()
         targetexp = 1. # target exposure time
-        current=math.exp(int(math.log(max(e_per_pixel/source/(targetexp)/wlf-float(b),1)/float(m))))
+        current=10**(int(math.log10(max(e_per_pixel/source/(targetexp)/wlf-float(b),1)/float(m))))
         return max(min(current,0.273),0.002)
 
     def compute_exposure_time(self, current, wl_led, e_per_pixel):
