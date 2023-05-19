@@ -412,6 +412,8 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         super(CCOBNarrowTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
         self.imcount = int(options.get('imcount', '1'))
         self.shots = options.getList('shots')
+        self.calibration_wavelengths = options.getList('calibrate_wavelength')
+        self.calibration_duration = options.getFloat('calibrate_duration', 0.2)
         self.ccob_thin = CcobThin("ccob-thin")
 
     # Insert additional CCOB Narrow specific FITS file data
@@ -425,9 +427,9 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         picovals = []
         self.ccob_thin.hyperOpenFastShutter()
         self.ccob_thin.diodeOn()
-        self.ccob_thin.picoSetTime(duration)
+        self.ccob_thin.picoSetTime(int(duration*1000))
         for wavelength in wavelengths:
-           self.ccob_thin.hyperSetWavelength(str(wavelength))
+           self.ccob_thin.hyperSetWavelength(wavelength)
            picovals.append(self.ccob_thin.picoReadCurrent())
         self.ccob_thin.diodeOff()
         self.ccob_thin.hyperCloseFastShutter()
@@ -435,7 +437,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def take_images(self):
 
-        self.calibrate([300, 400, 500], 200)
+        self.calibrate(self.calibration_wavelengths, self.calibration_duration)
         for shot in self.shots:
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
             print "Moving to b=%s u=%s x=%s y=%s" % (b, u, x, y)
