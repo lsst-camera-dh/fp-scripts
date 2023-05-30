@@ -24,12 +24,14 @@ def execute(config, command_line_options):
 
   items = config.options("ACQUIRE")
   for item in items:
-     options = Config(dict(config.items(item.upper())))
-     options.update(command_line_options)
-     options.update({'acqtype': item.upper()})
-     method = getattr(acquire,'do_%s' % item)
-     print ("{}".format('do_%s' % item))
-     result = method(options)
+       options = Config(dict(config.items(item.upper())))
+       options.update(command_line_options)
+       acq_type = options.get('acqtype')
+       if not acq_type:
+          acq_type = item
+       method = getattr(acquire,'do_%s' % acq_type)
+       options.update({'acqtype': acq_type.upper()})
+       result = method(options)
 
 class Config(dict):
   ''' Simple wrapper for a dictionary with some convenience methods
