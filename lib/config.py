@@ -2,7 +2,6 @@ import re
 import ConfigParser
 import StringIO
 import json
-import voltages
 import acquire
 import time
 
@@ -16,9 +15,6 @@ def parseConfig(file):
   config.readfp(StringIO.StringIO("".join(slines)))
   return config
 
-def setvoltages(avoltage):
-  voltages.setvoltages(json.loads(avoltage))
-
 def execute(config, command_line_options):
   symlink = command_line_options["symlink"]
 
@@ -26,33 +22,14 @@ def execute(config, command_line_options):
     one_time_config = config.items("CONFIG")
     acquire.do_one_time_config(Config(dict(one_time_config)))
 
-  try:
-    items = config.options("VOLTAGES")
-    voltages = [ ( item, config.get("VOLTAGES",item) ) for item in items]
-    print("VOLTAGES Block found. Acquisitions will be repeated on each settings")
-  except:
-    print("VOLTAGES Block not found.")
-    voltages = [ None ]
-
-  for args in voltages:
-    if args is not None:
-       alabel, avoltage = args
-       print(symlink,alabel,avoltage)
-       setvoltages(avoltage)
-       time.sleep(30)	# wait a bit for getting settled
-       if symlink is not None:
-          command_line_options["symlink"] = "/".join([symlink,alabel])
-
-    items = config.options("ACQUIRE")
-    for item in items:
-       options = Config(dict(config.items(item.upper())))
-       options.update(command_line_options)
-       acq_type = options.get('acqtype')
-       if not acq_type:
-          acq_type = item
-       method = getattr(acquire,'do_%s' % acq_type)
-       options.update({'acqtype': acq_type.upper()})
-       result = method(options)
+  items = config.options("ACQUIRE")
+  for item in items:
+     options = Config(dict(config.items(item.upper())))
+     options.update(command_line_options)
+     options.update({'acqtype': item.upper()})
+     method = getattr(acquire,'do_%s' % item)
+     print ("{}".format('do_%s' % item))
+     result = method(options)
 
 class Config(dict):
   ''' Simple wrapper for a dictionary with some convenience methods

@@ -1,7 +1,7 @@
 #!/usr/bin/env ccs-script
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
-from org.lsst.ccs.subsystem.focalplane.states import FocalPlaneState
+from org.lsst.ccs.subsystem.ocsbridge.sim.MCM import StandbyState
 from java.time import Duration
 from ccs import proxies
 import jarray
@@ -16,27 +16,19 @@ import bot
 CLEARDELAY=0.07
 #CLEARDELAY=2.35
 
-fp = CCS.attachProxy("focal-plane") # this will be override by CCS.aliases
-agentName = fp.getAgentProperty("agentName")
-if agentName != "focal-plane":
-   fp = CCS.attachProxy(agentName) # re-attach to ccs subsystem
-autoSave = True
+mcm = CCS.attachProxy("mcm") # this will be override by CCS.aliases
+agentName = mcm.getAgentProperty("agentName")
 imageTimeout = Duration.ofSeconds(60)
-symlinkToFast = True
-# These need to be changed when we switch R_and_D -> rawData
-symLinkFromLocation = "/gpfs/slac/lsst/fs3/g/data/rawData/focal-plane/"
-symLinkToLocation = "/gpfs/slac/lsst/fs3/g/fast/rawData/focal-plane/"
 
 def sanityCheck():
-   # Was this ever implemented on focal-plane?
-   #biasOn = fp.isBackBiasOn()
-   #if not biasOn:
-   #   print "WARNING: Back bias is not on"
-
-   state = fp.getState()
+   state = mcm.getState()
    alert = state.getState(AlertState)
    if alert!=AlertState.NOMINAL:
       print "WARNING: %s subsystem is in alert state %s" % ( agentName, alert )
+   standby = state.getState(StandbyState)
+   if standby==StandbyState.STANDBY:
+      print "WARNING: %s subsystem is in %s, attempting to switch to STARTED" % ( agentName, standby )
+      mcm.start("Normal")
 
 def clear(n=1):
    if n == 0:
@@ -54,50 +46,19 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
 def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1):
    sanityCheck()
    print "Setting FITS headers %s" % fitsHeaderData
-   fp.setHeaderKeywords(fitsHeaderData)
-   imageName = fp.allocateImageName()
+
+   imageName = mcm.allocateImageName() 
    print "Image name: %s" % imageName
 
-   # Horrible fix for using "fast" gpfs disk at SLAC
-   # Note, the paths here are hardwired above, and must be fixed if imagehandling config is changed
-   if symlinkToFast:
-      date = imageName.dateString
-      oldLocation = symLinkFromLocation+date+"/"
-      newLocation = symLinkToLocation+date+"/"+imageName.toString()
-      if not os.path.exists(oldLocation):
-         os.makedirs(oldLocation)
-      if not os.path.exists(newLocation):
-         os.makedirs(newLocation)
-      os.symlink(newLocation, oldLocation+imageName.toString())
-
-   fp.clearAndStartNamedIntegration(imageName, clears, annotation, locations)
+   mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
    # Sleep for 70 ms to allow for clear which is part of integrate to complete
    time.sleep(CLEARDELAY)
 
    if exposeCommand:
       extraData = exposeCommand()
       if extraData:
-          fp.setHeaderKeywords(extraData)
+          mcm.setHeaderKeywords(extraData)
+   mcm.endIntegration()
+   mcm.waitForImage()
+   return (imageName, None)
 
-   try:
-      for i in range(3):
-         getattr(fp,"R22/Reb{}".format(i))().pauseMonitorTasks( jarray.array([ "all" ], String ) )
-      time.sleep(0.05)
-      fp.endIntegration()
-      im = fp.waitForFitsFiles(imageTimeout)
-
-   except:
-      raise
-
-   finally:
-      for i in range(3):
-         getattr(fp,"R22/Reb{}".format(i))().resumeMonitorTasks( jarray.array([ "all" ], String ) )
-
-   if autoSave:
-     return (imageName, im)
-   else:
-
-     if ("move", True ) in extraData.items(): # if the stages was asked to move, we'll wait
-        bot.waitForMove()
-     fp.waitForImages(imageTimeout)
-     return (imageName, None)
