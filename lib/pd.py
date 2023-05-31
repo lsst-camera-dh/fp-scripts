@@ -21,7 +21,7 @@ from ccs_scripting_tools import CcsSubsystems, CCS
 from ccs import aliases
 from ccs import proxies
 
-bbsub = CCS.attachProxy("bot-bench")
+bbsub = CCS.attachProxy("ccob")
 
 ##  The below 3 lines are needed for workaround.
 #agentName = "ts8-bench"
@@ -80,7 +80,8 @@ class PhotodiodeReadout(object):
         # for exposures over 0.5 sec, nominal PD readout at 60Hz,
         # otherwise 240Hz
 
-        self.nplc = 1.0
+#        self.nplc = .1
+        self.nplc = 1
 #        if exptime > 0.5:
 #            self.nplc = 1.0
 #        else:
@@ -121,7 +122,7 @@ class PhotodiodeReadout(object):
         """
 
 
-        bbsub.PhotoDiode().setCurrentRange(2e-8)
+        bbsub.PhotoDiode().setCurrentRange(2e-7)
         bbsub.PhotoDiode().clrbuff()
         logger.info("AVER settings are happening with navg = %d",self.navg)
 
@@ -189,7 +190,7 @@ class PhotodiodeReadout(object):
                          time.time() - self.start_time)
         start_read = time.time()
 #        readTimeout = Duration.ofSeconds(59)
-        readTimeout = Duration.ofSeconds(60)
+        readTimeout = Duration.ofSeconds(120)
         result = bbsub.PhotoDiode().readBuffer( pd_filename, timeout=readTimeout)
         logger.info("PD_complete_at %f nreads= %d nplc= %f read_time= %f",
                          time.time()-self.start_time,self.nreads,self.nplc,time.time()-start_read)

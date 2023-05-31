@@ -61,4 +61,3 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    mcm.endIntegration()
    mcm.waitForImage()
    return (imageName, None)
-
