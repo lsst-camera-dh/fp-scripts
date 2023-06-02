@@ -14,7 +14,7 @@ from org.lsst.ccs.scripting import CCS
 from ccs import aliases
 from ccs import proxies
 from java.time import Duration
-import functools 
+import functools
 # This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
 test_seq_num = 0
 
@@ -181,7 +181,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
+            pd_readout.send_readings(image_name)
         return (image_name, file_list)
 
     def spanShutter(self, exposure):
@@ -195,7 +195,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     def waitForShutter(self, exposure):
         print "CCOB will flash %s for %g sec with %g A" % ( self.wl_led, self.flashtime, self.current  )
         print "Flash mode"
-        
+
         return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
 
     def compute_current(self, wl_led, e_per_pixel):
@@ -283,7 +283,7 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
             ret = sflat.split()
             self.wl_led = ret[0]
             e_per_pixel = float(ret[1])
-            count = float(ret[2]) 
+            count = float(ret[2])
             if len(ret)==4:
                 self.current=float(ret[3])
             else:
@@ -493,7 +493,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
         for j in range(len(self.points)):
             point = self.points[j]
             moveTo( point )
- 
+
             try:
                 self.locations = LocationSet(",".join(splittedpoints[2].split("_")))
             except:
@@ -517,7 +517,7 @@ class SpotTestCoordinator(BiasPlusImagesTestCoordinator):
 
                 for i in range(self.imcount):
 
-                    self.take_bias_plus_image(self.exposure1, functools.partial(expose_command,move=True if i==len(self.imcount)-1 else False), 
+                    self.take_bias_plus_image(self.exposure1, functools.partial(expose_command,move=True if i==len(self.imcount)-1 else False),
                                         symlink_image_type='%03.1f_%03.1f_FLAT_%s_%03.1f_%03.1f' % (x, y, self.mask1, self.exposure1, self.exposure2))
 
 class ScanTestCoordinator(TestCoordinator):

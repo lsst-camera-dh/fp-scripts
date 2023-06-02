@@ -21,6 +21,13 @@ from ccs_scripting_tools import CcsSubsystems, CCS
 from ccs import aliases
 from ccs import proxies
 
+from org.lsst.ccs.subsystem.imagehandling.data import ECSVFile
+from org.lsst.ccs.subsystem.imagehandling.data import AdditionalFile
+from org.lsst.ccs.subsystem.imagehandling.data.ECSVFile import Column
+from org.lsst.ccs.imagenaming import ImageName
+from org.lsst.ccs.bus.messages import StatusSubsystemData
+from org.lsst.ccs.bus.data import KeyValueData
+
 bbsub = CCS.attachProxy("ccob")
 
 ##  The below 3 lines are needed for workaround.
@@ -97,17 +104,17 @@ class PhotodiodeReadout(object):
 
 
         if doavg:
-            self.nreads = max_reads*2 
+            self.nreads = max_reads*2
 
             while self.nreads > max_reads:
-		self.nreads = int(total_time*60./self.nplc/self.navg)
-		if self.nreads<max_reads:
-			break
-		self.navg = self.navg + 1
+                self.nreads = int(total_time*60./self.nplc/self.navg)
+                if self.nreads<max_reads:
+                    break
+                self.navg = self.navg + 1
         else :
             self.nreads = min(total_time*60./self.nplc, max_reads)
-        # adjust PD readout when max_reads is reached
-        # (needs to be between 0.001 and 60 - add code to check)
+            # adjust PD readout when max_reads is reached
+            # (needs to be between 0.001 and 60 - add code to check)
             self.nplc = total_time*60.0/self.nreads
 
         print("self.nreads = ",self.nreads," self.navg = ",self.navg," self.nplc = ",self.nplc)
@@ -198,3 +205,22 @@ class PhotodiodeReadout(object):
 
         return pd_filename
 
+    def send_readings(self, imageName):
+        data = bbsub.PhotoDiode().readBuffer()
+
+        v = data[0]
+        t = data[1]
+
+        dataString = ""
+        for (tt,vv) in zip(t,v):
+            dataString += "%7g %7g\n" % (tt,vv)
+
+        timeColumn = Column("TIME", "%7g", "float64", "Measurement time (delta)", "s")
+        valueColumn = Column("CURRENT", "%7g", "float64", "Measured flux", "A")
+
+        ecsvFile = ECSVFile([timeColumn,valueColumn], dataString, "%s_photodiode.ecsv" % imageName, "photodiode", imageName)
+        ecsvFile.setDelimiter(" ")
+        ecsvFile.addMetaData({"CALIBCLS": "lsst.ip.isr.PhotodiodeCalib", "OBSTYPE": "PHOTODIODE"})
+
+        msg = StatusSubsystemData(KeyValueData(AdditionalFile.EVENT_KEY, ecsvFile))
+        CCS.getMessagingAccess().sendStatusMessage(msg)
