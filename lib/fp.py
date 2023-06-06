@@ -4,14 +4,7 @@ from org.lsst.ccs.bus.states import AlertState
 from org.lsst.ccs.subsystem.ocsbridge.sim.MCM import StandbyState
 from java.time import Duration
 from ccs import proxies
-import jarray
-from java.lang import String
-#import bot_bench
 import time
-import array
-import os
-import time
-import bot
 
 CLEARDELAY=0.07
 #CLEARDELAY=2.35
@@ -43,21 +36,39 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
    # this could skip the startIntegration/endIntegration and got straigh to readout
    return takeExposure(fitsHeaderData=fitsHeaderData, annotation=annotation, locations=locations)
 
-def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1):
+def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1, shutterMode=None, exposeTime=None):
    sanityCheck()
    print "Setting FITS headers %s" % fitsHeaderData
 
-   imageName = mcm.allocateImageName() 
+   imageName = mcm.allocateImageName()
    print "Image name: %s" % imageName
 
-   mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
-   # Sleep for 70 ms to allow for clear which is part of integrate to complete
-   time.sleep(CLEARDELAY)
+   # if exposeTime is None we assume that the exposeCommand will take care of computing the exposure delay
+   if not exposeTime:
+      mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
+      # Sleep for 70 ms to allow for clear which is part of integrate to complete
+      time.sleep(CLEARDELAY)
 
-   if exposeCommand:
-      extraData = exposeCommand()
-      if extraData:
-          mcm.setHeaderKeywords(extraData)
-   mcm.endIntegration()
-   mcm.waitForImage()
-   return (imageName, None)
+      if exposeCommand:
+         extraData = exposeCommand()
+         if extraData:
+            mcm.setHeaderKeywords(extraData)
+      mcm.endIntegration()
+      mcm.waitForImage()
+      return (imageName, None)
+   # if exposeTime is specified then we assume that exposeCommand will be programmed to fit within exposeTime.
+   # and the MCM+shutter will take care of the overall exposure timing.
+   # This is the only mode in which guiding will work.
+   else:
+      mcm.takeImage(imageName, shutterMode != None, exposeTime, clears, annotation, locations, fitsHeaderData)
+      #  Sleep for 70 ms to allow for clear which is part of integrate to complete
+      time.sleep(CLEARDELAY)
+      if exposeCommand:
+         extraData = exposeCommand()
+         if extraData:
+            mcm.setHeaderKeywords(extraData)
+      mcm.waitForImage()
+      return (imageName, None)
+
+def initGuiders(roiSpec):
+   mcm.initGuiders(roiSpec)
