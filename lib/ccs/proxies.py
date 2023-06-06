@@ -1,5 +1,6 @@
 from java.time import Duration
 from org.lsst.ccs.scripting import CCS 
+from java.lang import RuntimeException
 
 class ccsProxy(object):
    '''The ccsProxy class can be used to wrap a CCS subsystem in such a way that
@@ -17,7 +18,7 @@ class ccsProxy(object):
       self._ccs = ccs 
       self._subsystem = subsystemName
       self._target = None
-      self._targets = ccs.sendSynchCommand("getCommandTargets")	
+      self._targets = CCS.getTargetsForSubsystem(subsystemName)
 
    @staticmethod
    def __parseTimeout(timeout):
@@ -31,6 +32,8 @@ class ccsProxy(object):
          raise RuntimeError("Cannot convert %s to Duration" % timeout)
    
    def __getattr__(self, key):
+      if not self._ccs:
+         raise RuntimeException("Attempt to use missing subsystem %s" % self._subsystem)
       # If the method already exists in _ccs, return it
       if hasattr(self._ccs, key):
          return getattr(self._ccs, key)
@@ -56,6 +59,10 @@ class ccsProxy(object):
 
 @staticmethod
 def attachProxy(key, level=0):
-   return ccsProxy(CCS.attachSubsystem(key, level),key)
+   try: 
+      return ccsProxy(CCS.attachSubsystem(key, level),key)
+   except RuntimeException as xx:
+      print "WARNING: Unable to attach to subsystem %s" % key
+      return ccsProxy(None, key)
 
 CCS.attachProxy = attachProxy

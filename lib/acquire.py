@@ -182,7 +182,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
-            pd_readout.write_readings(file_list.getCommonParentDirectory().toString(),image_name.toString().split('_')[-1],image_name.toString().split('_')[-2])
+            pd_readout.send_readings(image_name)
         return (image_name, file_list)
 
     def spanShutter(self, exposure):
@@ -205,7 +205,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         wlf = self.ledConfig.getFloat(wl_led.lower())
         m,b = self.currentConfig.getList(wl_led)[0].split()
         targetexp = 1. # target exposure time
-        current=math.exp(int(math.log(max(e_per_pixel/source/(targetexp)/wlf-float(b),1)/float(m))))
+        current=10**(int(math.log10(max(e_per_pixel/source/(targetexp)/wlf-float(b),1)/float(m))))
         return max(min(current,0.273),0.002)
 
     def compute_exposure_time(self, current, wl_led, e_per_pixel):
@@ -256,15 +256,25 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
         super(SuperFlatTestCoordinator, self).__init__(options, 'SFLAT', 'FLAT')
         self.sflats = options.getList('sflat')
 
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(SuperFlatTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({
+			'FILTER1': self.fluxlevel
+			})
+        return data
+
     def approx_equals(self, a, b):
         return (a-b)/(a+b) < .2
 
     def low_or_high(self, e_per_pixel):
         if self.approx_equals(e_per_pixel, 1000):
             self.test_type="SFLAT_LO"
+            self.fluxlevel="LOW"
             return 'L'
         elif self.approx_equals(e_per_pixel, 50000):
             self.test_type="SFLAT_HI"
+            self.fluxlevel="HIGH"
             return 'H'
         else:
             return '?'
@@ -294,6 +304,14 @@ class LambdaTestCoordinator(FlatFieldTestCoordinator):
         super(LambdaTestCoordinator, self).__init__(options, 'LAMBDA', 'FLAT')
         self.imcount = int(options.get('imcount', 1))
         self.lambdas = options.getList('lambda')
+
+    def create_fits_header_data(self, exposure, image_type):
+        data = super(LambdaTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        if image_type != 'BIAS':
+            data.update({
+			'FILTER1': self.wl_led
+			})
+        return data
 
     def take_images(self):
         for lamb in self.lambdas:
@@ -570,6 +588,7 @@ class ScanTestCoordinator(TestCoordinator):
         self.readcols = options.getInt("readcols")
         self.postcols = options.getInt("postcols")
         self.overcols = options.getInt("overcols")
+        self.readcols2 = options.getInt("readcols2")
         self.prerows = options.getInt("prerows")
         self.readrows = options.getInt("readrows")
         self.postrows = options.getInt("postrows")
@@ -580,6 +599,7 @@ class ScanTestCoordinator(TestCoordinator):
         if self.noop or self.skip - test_seq_num < self.scanmode + self.transparent:
             preCols = fp.fp.getSequencerParameter("PreCols")
             readCols = fp.fp.getSequencerParameter("ReadCols")
+            readCols2 = fp.fp.getSequencerParameter("ReadCols2")
             postCols = fp.fp.getSequencerParameter("PostCols")
             overCols = fp.fp.getSequencerParameter("OverCols")
             preRows = fp.fp.getSequencerParameter("PreRows")
@@ -591,6 +611,7 @@ class ScanTestCoordinator(TestCoordinator):
 
             print "preCols="  , preCols
             print "readCols=" , readCols
+            print "readCols2=" , readCols2
             print "postCols=" , postCols
             print "overCols=" , overCols
 
@@ -607,6 +628,7 @@ class ScanTestCoordinator(TestCoordinator):
                 "underCols":self.undercols,
                 "preCols":  self.precols,
                 "readCols": self.readcols,
+                "readCols2": self.readcols2,
                 "postCols": self.postcols,
                 "overCols": self.overcols,
                 "preRows":  self.prerows,
@@ -640,7 +662,7 @@ class ScanTestCoordinator(TestCoordinator):
            self.take_image(exposure, expose_command, image_type=None, symlink_image_type=None)
 
         # Restore settings
-        fp.fp.dropAllChanges()
+        fp.fp.dropChanges(jarray.array([ 'Sequencer', 'Rafts' ], String ))
 
         if idleFlushTimeout != -1:
             fp.clear()

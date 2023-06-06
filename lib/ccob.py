@@ -66,7 +66,11 @@ def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15, maxtime=1.3)
    global t1
    t1 = CCSTimeStamp.currentTime()
    accum=0.
-   for subflash in [ maxtime for i in range(int(seconds/maxtime)) ]+[seconds%maxtime]: # divide a longer flash than maxtime to multiple flashes
+   #for subflash in [ maxtime for i in range(int(seconds/maxtime)) ]+[seconds%maxtime]: # divide a longer flash than maxtime to multiple flashes
+   numflashes=int(seconds/maxtime)+1
+   for i in range(numflashes):
+      subflash = seconds/numflashes
+      time.sleep(0.1)
       prepLED(led, current, subflash)
       driver.startExposure()
       time.sleep(subflash)
