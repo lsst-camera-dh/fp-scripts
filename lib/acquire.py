@@ -2,7 +2,7 @@ import os
 import time
 import config
 import sys
-#import fp
+import fp
 #import ccob
 #import bot
 import math
@@ -33,6 +33,8 @@ class TestCoordinator(object):
         self.locations = LocationSet(options.get('locations',''))
         self.clears = options.getInt('clears', 1)
         self.extra_delay = options.getFloat('extradelay', 0)
+        self.shutterMode = options.get('shutter', None)
+        self.exposeTime = None
 
     def take_images(self):
         pass
@@ -59,6 +61,8 @@ class TestCoordinator(object):
     def take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
         return self.__take_image(exposure, expose_command, image_type, symlink_image_type)
 
+    # This is the method that actually does the work
+    #
     def __take_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
         image_type = image_type if image_type else self.image_type
         symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
@@ -73,7 +77,7 @@ class TestCoordinator(object):
 
         if not self.noop:
             fits_header_data = self.create_fits_header_data(exposure, image_type)
-            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears)
+            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears, shutterMode=self.shutterMode, exposeTime=self.exposeTime)
             self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
             test_seq_num += 1
             return (image_name, file_list)
@@ -86,7 +90,7 @@ class TestCoordinator(object):
         ''' Create symlinks for created FITS files, based on the specification here:
             https://confluence.slac.stanford.edu/x/B244Dg
         '''
-        if not file_list: # Indicates --nofits option was used
+        if not file_list: # Indicates --nofits option was used, or no file list is available (when using MCM that is always the case)
             return
         print "Saved %d FITS files to %s" % (file_list.size(), file_list.getCommonParentDirectory())
         if self.symlink:
@@ -428,8 +432,12 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
 class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
         super(CCOBNarrowTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
-        self.imcount = int(options.get('imcount', '1'))
+        self.imcount = options.getInt('imcount', '1')
         self.shots = options.getList('shots')
+        # TODO: Handle shot darks
+        self.shotDarks = options.getInt('shotdarks', 0)
+        # TODO: Handle these headers
+        self.headers  = options.getList('headers')
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
         self.calibration_duration = options.getFloat('calibrate_duration', 0.2)
         self.ccob_thin = CcobThin("ccob-thin")
@@ -454,32 +462,33 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
            picovals.append(self.ccob_thin.picoReadCurrent())
         self.ccob_thin.hyperCloseFastShutter()
         self.ccob_thin.diodeOff()
+        # TODO convert results to an ecsv file and send to image-handling
         print(picovals)
 
     def take_images(self):
 
-        self.calibrate(self.calibration_wavelengths, self.calibration_duration)
+        #self.calibrate(self.calibration_wavelengths, self.calibration_duration)
         for shot in self.shots:
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
-            print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
-                self.ccob_thin.moveTo(X, float(x), 20)
-                self.ccob_thin.moveTo(Y, float(y), 20)
-                self.ccob_thin.moveTo(B, float(b), 8)
-                self.ccob_thin.moveTo(U, float(u), 15)
-                self.ccob_thin.hyperSetWavelength(float(lamb))
+                print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
+                #self.ccob_thin.moveTo(X, float(x), 20)
+                #self.ccob_thin.moveTo(Y, float(y), 20)
+                #self.ccob_thin.moveTo(B, float(b), 8)
+                #self.ccob_thin.moveTo(U, float(u), 15)
+                #self.ccob_thin.hyperSetWavelength(float(lamb))
                 expose_time=int(float(expose_time)*1000)
                 print "Move done, now starting shot of length %s ms" % (expose_time)
-                self.ccob_thin.hyperStartFastExposure(expose_time)
-                print "Shot done"
-#            self.locations = LocationSet(locations)
-#            self.current = float(self.current)
-#            duration = float(expose_time)
-#            def expose_command():
-#                adc = ccob.fireLED(self.led, self.current, duration)
-#                return {"CCOBADC": adc}
-#            for i in range(self.imcount):
-#                self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
+                self.nid = int(id, 0) # TODO: handle nid
+                self.locations = LocationSet(locations)
+                duration = float(integ_time)
+                def expose_command():
+                    #TODO: Need extra delay?
+                    #self.ccob_thin.hyperStartFastExposure(expose_time)
+                    print "Shot done"
+                self.exposeTime = duration
+                for i in range(self.imcount):
+                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
