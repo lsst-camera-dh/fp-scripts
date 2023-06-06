@@ -182,7 +182,7 @@ It exports a "get" method for each type of status message.
 
     def hyperSetWavelength(self, wavelength):
         """ """
-        return self._subsys.sendCommand("hyperSetWavelength", wavelength)
+        return self._subsys.sendCommand("hyperSetWavelength", str(wavelength))
 
     def hyperStartFastExposure(self, milliseconds):
         """ """

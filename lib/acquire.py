@@ -2,7 +2,7 @@ import os
 import time
 import config
 import sys
-import fp
+#import fp
 #import ccob
 #import bot
 import math
@@ -425,14 +425,17 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
 
     def calibrate(self, wavelengths, duration):
         picovals = []
-        self.ccob_thin.hyperOpenFastShutter()
+
         self.ccob_thin.diodeOn()
+        self.ccob_thin.hyperOpenFastShutter()
         self.ccob_thin.picoSetTime(int(duration*1000))
         for wavelength in wavelengths:
+           print(wavelength)
+           wavelength=float(wavelength)
            self.ccob_thin.hyperSetWavelength(wavelength)
            picovals.append(self.ccob_thin.picoReadCurrent())
-        self.ccob_thin.diodeOff()
         self.ccob_thin.hyperCloseFastShutter()
+        self.ccob_thin.diodeOff()
         print(picovals)
 
     def take_images(self):
@@ -440,13 +443,17 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         self.calibrate(self.calibration_wavelengths, self.calibration_duration)
         for shot in self.shots:
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
-            print "Moving to b=%s u=%s x=%s y=%s" % (b, u, x, y)
+            print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
-                self.ccob_thin.moveTo(X, float(x), 10)
-                self.ccob_thin.moveTo(Y, float(y), 10)
-                self.ccob_thin.moveTo(B, float(b), 5)
-                self.ccob_thin.moveTo(U, float(u), 10)
-            print "Move done"
+                self.ccob_thin.moveTo(X, float(x), 20)
+                self.ccob_thin.moveTo(Y, float(y), 20)
+                self.ccob_thin.moveTo(B, float(b), 8)
+                self.ccob_thin.moveTo(U, float(u), 15)
+                self.ccob_thin.hyperSetWavelength(float(lamb))
+                expose_time=int(float(expose_time)*1000)
+                print "Move done, now starting shot of length %s ms" % (expose_time)
+                self.ccob_thin.hyperStartFastExposure(expose_time)
+                print "Shot done"
 #            self.locations = LocationSet(locations)
 #            self.current = float(self.current)
 #            duration = float(expose_time)
