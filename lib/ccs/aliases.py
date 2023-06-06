@@ -1,4 +1,5 @@
-from org.lsst.ccs.scripting import CCS 
+from org.lsst.ccs.scripting import CCS
+from java.lang import Boolean
 
 CCS.aliases = dict()
 
@@ -9,7 +10,7 @@ def attachAlias(key, lock=True, level=None):
    if level:
       return CCS.origAttachSubsystem(key, level)
    else:
-      return CCS.origAttachSubsystem(key, lock)
+      return CCS.origAttachSubsystem(key, Boolean(lock))
 
 CCS.origAttachSubsystem = CCS.attachSubsystem
 CCS.attachSubsystem = attachAlias
