@@ -7,6 +7,7 @@ from ccs import aliases
 from ccs import proxies
 from ccs import versions
 from ccs import configs
+from java.lang import Boolean
 from java.time import Duration
 
 # Temporary work around for problems with CCS responsiveness
@@ -32,12 +33,13 @@ if len(args)!=1:
 CCS.aliases = {
 	'focal-plane': 'ts8-fp',
 	'bot-bench': 'ts8-bench',
-	'bot-motorplatform': 'ts8-motorplatform'
+	'bot-motorplatform': 'ts8-motorplatform',
+        'mcm': 'ts8-mcm'
 }
 
 # Assume if run is set we are running under eTraveler
 if options.run:
-  fp = CCS.attachProxy('focal-plane')
+  fp = CCS.attachProxy('focal-plane', Boolean(false))
   time.sleep(10.0)
   versions.write_versions(fp)
   configs.write_config(fp, ['Sequencer', 'Rafts'])

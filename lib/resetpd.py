@@ -19,17 +19,18 @@ from ccs import aliases
 from ccs import proxies
 
 #bbsub = CCS.attachProxy("bot-bench")
-bbsub = CCS.attachProxy("ts8-bench")
+bbsub = CCS.attachProxy("ccob")
 
 ##
 ##  The bleow 3 lines are needed for workaround.
-devName   = "PhotoDiode2"
+devName   = "PhotoDiode"
+bbsub.PhotoDiode = bbsub.PhotoDiode
 agentName = bbsub.getAgentProperty("agentName")
-if  agentName != "bot-bench":
-    bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
-if  agentName == "ts8-bench":
-    bbsub.PhotoDiode = bbsub.Monitor2
-    devName = "Monitor2"
+#if  agentName != "bot-bench":
+#    bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
+#if  agentName == "ts8-bench":
+#    bbsub.PhotoDiode = bbsub.Monitor2
+#    devName = "Monitor2"
 #bbsub_PhotoDiode = CCS.attachSubsystem("ts8-bench/Monitor")
 
 cmds = """
@@ -42,6 +43,7 @@ send :TRIG:TIM 0.0167
 send :SENS:CURR:MED:RANK 1
 send :SENS:CURR:MED:STAT 1
 """
+
 
 for acmd in cmds.split("\n"):
 	if len(acmd)==0:
