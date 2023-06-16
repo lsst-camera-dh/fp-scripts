@@ -3,10 +3,10 @@ import time
 import config
 import sys
 import fp
-#import ccob
+import ccob
 #import bot
 import math
-#from pd import PhotodiodeReadout
+from pd import PhotodiodeReadout
 from org.lsst.ccs.utilities.location import LocationSet
 import jarray
 from java.lang import String
