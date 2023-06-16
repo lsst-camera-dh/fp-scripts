@@ -30,12 +30,12 @@ if len(args)!=1:
   exit(1)
 
 #CCS.aliases = {'focal-plane': 'focal-plane-sim', 'bot-bench': 'bot-bench-sim'}
-CCS.aliases = {
-	'focal-plane': 'ts8-fp',
-	'bot-bench': 'ts8-bench',
-	'bot-motorplatform': 'ts8-motorplatform',
-        'mcm': 'ts8-mcm'
-}
+#CCS.aliases = {
+#	'focal-plane': 'ts8-fp',
+#	'bot-bench': 'ts8-bench',
+#	'bot-motorplatform': 'ts8-motorplatform',
+#       'mcm': 'ts8-mcm'
+#}
 
 # Assume if run is set we are running under eTraveler
 if options.run:
