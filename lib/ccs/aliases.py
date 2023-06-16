@@ -4,7 +4,7 @@ from java.lang import Boolean
 CCS.aliases = dict()
 
 @staticmethod
-def attachAlias(key, lock=True, level=None):
+def attachAlias(key, level=None, lock=True):
    if key in CCS.aliases:
       key = CCS.aliases[key]
    if level:
