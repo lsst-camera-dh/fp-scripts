@@ -281,6 +281,8 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
             self.fluxlevel="HIGH"
             return 'H'
         else:
+            self.test_type="SFLAT_?"
+            self.fluxlevel="?"
             return '?'
 
     def take_images(self):
