@@ -39,7 +39,7 @@ if len(args)!=1:
 
 # Assume if run is set we are running under eTraveler
 if options.run:
-  fp = CCS.attachProxy('focal-plane', Boolean(false))
+  fp = CCS.attachProxy('focal-plane', Boolean(False))
   time.sleep(10.0)
   versions.write_versions(fp)
   configs.write_config(fp, ['Sequencer', 'Rafts'])
