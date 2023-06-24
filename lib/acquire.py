@@ -2,6 +2,7 @@ import os
 import time
 import config
 import sys
+import re
 import fp
 import ccob
 #import bot
@@ -18,6 +19,8 @@ from java.time import Duration
 import functools
 # This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
 test_seq_num = 0
+
+SPACE_MATCHER = re.compile(r"\s+(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)")
 
 class TestCoordinator(object):
     ''' Base (abstract) class for all tests '''
@@ -434,10 +437,12 @@ class CCOBTestCoordinator(BiasPlusImagesTestCoordinator):
 class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
         super(CCOBNarrowTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
-        self.imcount = options.getInt('imcount', '1')
+        self.imcount = options.getInt('imcount', 1)
         self.shots = options.getList('shots')
+        print "SHOTS"
+        print self.shots
         # TODO: Handle shot darks
-        self.shotDarks = options.getInt('shotdarks', 0)
+        # self.shotDarks = options.getInt('shotdarks', 0)
         # TODO: Handle these headers
         self.headers  = options.getList('headers')
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
@@ -446,9 +451,9 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
 
     # Insert additional CCOB Narrow specific FITS file data
     def create_fits_header_data(self, exposure, image_type):
-        data = super(CCOBTestCoordinator, self).create_fits_header_data(exposure, image_type)
-        if image_type != 'BIAS':
-            data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
+        data = super(CCOBNarrowTestCoordinator, self).create_fits_header_data(exposure, image_type)
+        #if image_type != 'BIAS':
+        #    data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
         return data
 
     def calibrate(self, wavelengths, duration):
@@ -471,26 +476,28 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
 
         #self.calibrate(self.calibration_wavelengths, self.calibration_duration)
         for shot in self.shots:
-            (b, u, x, y, integ_time, expose_time, lamb, locations, id) = shot.split()
+            print "SHOTSHOTSHOT"
+            print shot
+            (b, u, x, y, integ_time, expose_time, lamb, locations, id) = SPACE_MATCHER.split(shot)
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
-                #self.ccob_thin.moveTo(X, float(x), 20)
-                #self.ccob_thin.moveTo(Y, float(y), 20)
-                #self.ccob_thin.moveTo(B, float(b), 8)
-                #self.ccob_thin.moveTo(U, float(u), 15)
-                #self.ccob_thin.hyperSetWavelength(float(lamb))
+                self.ccob_thin.moveTo(X, float(x), 20)
+                self.ccob_thin.moveTo(Y, float(y), 20)
+                self.ccob_thin.moveTo(B, float(b), 8)
+                self.ccob_thin.moveTo(U, float(u), 15)
+                self.ccob_thin.hyperSetWavelength(float(lamb))
                 expose_time=int(float(expose_time)*1000)
                 print "Move done, now starting shot of length %s ms" % (expose_time)
                 self.nid = int(id, 0) # TODO: handle nid
-                self.locations = LocationSet(locations)
+                self.locations = LocationSet(locations.strip('\"'))
                 duration = float(integ_time)
                 def expose_command():
                     #TODO: Need extra delay?
-                    #self.ccob_thin.hyperStartFastExposure(expose_time)
+                    self.ccob_thin.hyperStartFastExposure(expose_time)
                     print "Shot done"
                 self.exposeTime = duration
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (self.led, x, y))
+                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):

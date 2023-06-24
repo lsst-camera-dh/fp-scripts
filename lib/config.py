@@ -5,6 +5,8 @@ import json
 import acquire
 import time
 
+COMMA_MATCHER = re.compile(r",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)")
+
 def parseConfig(file):
   with open(file) as f:
      lines = f.readlines()
@@ -67,6 +69,7 @@ class Config(dict):
 
 
   def getList(self, key):
-     return self.get(key).replace('\n','').split(',')
+     str = self.get(key).replace('\n','')
+     return COMMA_MATCHER.split(str)
 
 
