@@ -165,7 +165,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     # Insert additional CCOB specific FITS file data
     def create_fits_header_data(self, exposure, image_type):
         data = super(FlatFieldTestCoordinator, self).create_fits_header_data(exposure, image_type)
-        if image_type != 'BIAS':
+        if image_type != 'BIAS' and image_type != 'DARK':
             data.update({
 			'CCOBLED': self.wl_led,
 			'CCOBCURR': self.current,
