@@ -438,11 +438,9 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
         super(CCOBNarrowTestCoordinator, self).__init__(options, 'CCOBThin', 'CCOBThin')
         self.imcount = options.getInt('imcount', 1)
+        self.bcount = options.getInt('bcount', 1)
         self.shots = options.getList('shots')
-        print "SHOTS"
-        print self.shots
-        # TODO: Handle shot darks
-        # self.shotDarks = options.getInt('shotdarks', 0)
+        self.shotDarks = options.getList('shotdarks')
         # TODO: Handle these headers
         self.headers  = options.getList('headers')
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
@@ -498,6 +496,16 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                 self.exposeTime = duration
                 for i in range(self.imcount):
                     self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
+
+                integration, count = self.shotDarks
+                integration = float(integration)
+                count = int(count)
+                expose_command = lambda: time.sleep(integration)
+
+                for d in range(count):
+                    self.take_image(integration, expose_command)
+
+
 
 class XTalkTestCoordinator(BiasPlusImagesTestCoordinator):
     def __init__(self, options):
