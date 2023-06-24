@@ -440,7 +440,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         self.imcount = options.getInt('imcount', 1)
         self.bcount = options.getInt('bcount', 1)
         self.shots = options.getList('shots')
-        self.shotDarks = options.getList('shotdarks')
+        self.shotDarks = options.get('shotdarks')
         # TODO: Handle these headers
         self.headers  = options.getList('headers')
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
@@ -497,13 +497,15 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                 for i in range(self.imcount):
                     self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
 
-                integration, count = self.shotDarks
+                print "DARKS"
+                print self.shotDarks
+                integration, count = self.shotDarks.split()
                 integration = float(integration)
                 count = int(count)
                 expose_command = lambda: time.sleep(integration)
 
                 for d in range(count):
-                    self.take_image(integration, expose_command)
+                    self.take_image(integration, expose_command, image_type='DARK')
 
 
 
