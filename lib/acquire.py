@@ -500,12 +500,10 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                 print "DARKS"
                 print self.shotDarks
                 integration, count = self.shotDarks.split()
-                integration = float(integration)
+                self.exposeTime = float(integration)
                 count = int(count)
-                expose_command = lambda: time.sleep(integration)
-
                 for d in range(count):
-                    self.take_image(integration, expose_command, image_type='DARK')
+                    self.take_image(integration, None, image_type='DARK')
 
 
 
