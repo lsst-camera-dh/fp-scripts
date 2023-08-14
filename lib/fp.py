@@ -45,7 +45,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
 
    # if exposeTime is None we assume that the exposeCommand will take care of implementing the exposure delay
    if not exposeTime:
-      mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
+      mcm.clearAndStartNamedIntegration(imageName, shutterMode != None, clears, annotation, locations, fitsHeaderData)
       # Sleep for 70 ms to allow for clear which is part of integrate to complete
       time.sleep(CLEARDELAY)
 
