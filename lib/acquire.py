@@ -17,6 +17,15 @@ from ccs import aliases
 from ccs import proxies
 from java.time import Duration
 import functools
+# Needed for writing ecsv file
+from org.lsst.ccs.subsystem.imagehandling.data import ECSVFile
+from org.lsst.ccs.subsystem.imagehandling.data import AdditionalFile
+from org.lsst.ccs.subsystem.imagehandling.data.ECSVFile import Column
+from org.lsst.ccs.imagenaming import ImageName
+from org.lsst.ccs.bus.messages import StatusSubsystemData
+from org.lsst.ccs.bus.data import KeyValueData
+
+
 # This is a global variable, set to zero when the script starts, and updated monotonically (LSSTTD-1473)
 test_seq_num = 0
 
@@ -454,25 +463,32 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         #    data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
         return data
 
-    def calibrate(self, wavelengths, duration):
-        picovals = []
+    def calibrate(self, wavelengths, duration, image_name):
+        dataString = ""
 
         self.ccob_thin.diodeOn()
         self.ccob_thin.hyperOpenFastShutter()
         self.ccob_thin.picoSetTime(int(duration*1000))
         for wavelength in wavelengths:
-           print(wavelength)
            wavelength=float(wavelength)
            self.ccob_thin.hyperSetWavelength(wavelength)
-           picovals.append(self.ccob_thin.picoReadCurrent())
+           dataString += "%7g %7g %7g\n" % (duration, wavelength, self.ccob_thin.picoReadCurrent())
         self.ccob_thin.hyperCloseFastShutter()
         self.ccob_thin.diodeOff()
-        # TODO convert results to an ecsv file and send to image-handling
-        print(picovals)
+        # convert results to an ecsv file and send to image-handling
+
+        durationColumn = Column("DURATION", "%7g", "float64", "Duration (delta)", "s")
+        waveLengthColumn = Column("WAVELENGTH", "%7g", "float64", "Wavelength", "nm")
+        valueColumn = Column("CURRENT", "%7g", "float64", "Measured flux", "A")
+
+        ecsvFile = ECSVFile([durationColumn, waveLengthColumn, valueColumn], dataString, "%s_calibrate.ecsv" % image_name, "calibrate", image_name)
+        ecsvFile.setDelimiter(" ")
+
+        msg = StatusSubsystemData(KeyValueData(AdditionalFile.EVENT_KEY, ecsvFile))
+        CCS.getMessagingAccess().sendStatusMessage(msg)
 
     def take_images(self):
 
-        #self.calibrate(self.calibration_wavelengths, self.calibration_duration)
         for shot in self.shots:
             print "SHOTSHOTSHOT"
             print shot
@@ -495,14 +511,16 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                     print "Shot done"
                 self.exposeTime = duration
                 for i in range(self.imcount):
-                    self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
+                    (last_image_name, file_list) = self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
 
                 print "DARKS"
                 print self.shotDarks
                 integration, count = self.shotDarks.split()
                 self.exposeTime = float(integration)
                 for d in range(int(count)):
-                    self.take_image(self.exposeTime, None, image_type='DARK')
+                     (last_image_name, file_list) = self.take_image(self.exposeTime, None, image_type='DARK')
+        # Write calibration at end of data taking, using the last imageName
+        self.calibrate(self.calibration_wavelengths, self.calibration_duration, last_image_name)
 
 
 
