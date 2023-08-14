@@ -36,6 +36,9 @@ class TestCoordinator(object):
         self.locations = LocationSet(options.get('locations',''))
         self.clears = options.getInt('clears', 1)
         self.extra_delay = options.getFloat('extradelay', 0)
+        # Supported shutter modes for main camera
+        # None -- do nothing, leave the shutter in whatever state it is in
+        # Normal -- open and close the shutter on each image acquisition
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
 
@@ -441,17 +444,16 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         self.bcount = options.getInt('bcount', 1)
         self.shots = options.getList('shots')
         self.shotDarks = options.get('shotdarks')
-        # TODO: Handle these headers
         self.headers  = options.getList('headers')
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
         self.calibration_duration = options.getFloat('calibrate_duration', 0.2)
         self.ccob_thin = CcobThin("ccob-thin")
 
-    # Insert additional CCOB Narrow specific FITS file data
+    # Insert additional CCOB Narrow specific FITS file data. Called from _take_image
     def create_fits_header_data(self, exposure, image_type):
         data = super(CCOBNarrowTestCoordinator, self).create_fits_header_data(exposure, image_type)
-        #if image_type != 'BIAS':
-        #    data.update({'CCOBLED': self.led, 'CCOBCURR': self.current})
+        data.update(extraDict)
+        data.update({'id': hex(self.nid)})
         return data
 
     def calibrate(self, wavelengths, duration):
@@ -473,10 +475,16 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
     def take_images(self):
 
         #self.calibrate(self.calibration_wavelengths, self.calibration_duration)
-        for shot in self.shots:
+        for shot,headers in zip(self.shots,self.headers):
             print "SHOTSHOTSHOT"
             print shot
             (b, u, x, y, integ_time, expose_time, lamb, locations, id) = SPACE_MATCHER.split(shot)
+            extraHeaders = SPACE_MATCHER.split(headers)
+            self.extraDict = {}
+            for eh in self.extraHeaders:
+                k,v = eh.split("=")
+                self.extraDict[k] = v
+
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
                 self.ccob_thin.moveTo(X, float(x), 20)
@@ -486,7 +494,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                 self.ccob_thin.hyperSetWavelength(float(lamb))
                 expose_time=int(float(expose_time)*1000)
                 print "Move done, now starting shot of length %s ms" % (expose_time)
-                self.nid = int(id, 0) # TODO: handle nid
+                self.nid = int(id, 0)
                 self.locations = LocationSet(locations.strip('\"'))
                 duration = float(integ_time)
                 def expose_command():
@@ -495,6 +503,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                     print "Shot done"
                 self.exposeTime = duration
                 for i in range(self.imcount):
+                    self.nid += 1
                     self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
 
                 print "DARKS"
@@ -502,6 +511,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                 integration, count = self.shotDarks.split()
                 self.exposeTime = float(integration)
                 for d in range(int(count)):
+                    self.nid += 1
                     self.take_image(self.exposeTime, None, image_type='DARK')
 
 
