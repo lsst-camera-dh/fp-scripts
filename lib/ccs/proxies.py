@@ -18,7 +18,7 @@ class ccsProxy(object):
       self._ccs = ccs 
       self._subsystem = subsystemName
       self._target = None
-      self._targets = CCS.getTargetsForSubsystem(subsystemName)
+      self._targets = ccs.sendSynchCommand("getCommandTargets")	
 
    @staticmethod
    def __parseTimeout(timeout):
