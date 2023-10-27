@@ -2,6 +2,7 @@
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
 from org.lsst.ccs.subsystem.ocsbridge.sim.MCM import StandbyState
+from org.lsst.ccs.subsystem.ocsbridge.sim.Shutter import ShutterState
 from java.time import Duration
 from ccs import proxies
 import time
@@ -12,6 +13,16 @@ CLEARDELAY=0.07
 mcm = CCS.attachProxy("mcm") # this will be override by CCS.aliases
 agentName = mcm.getAgentProperty("agentName")
 imageTimeout = Duration.ofSeconds(60)
+
+# Called at start of run to check shutter status
+def checkShutterStatus(shutterMode):
+   state = mcm.getState()
+   shutterState = state.getState(ShutterState)
+   print "ShutterState: %s   ShuterMode: %s" % (shutterState, shutterMode)
+   if shutterState==ShutterState.CLOSED and shutterMode.lower()=="open":
+      mcm.openShutter()
+   if shutterState==ShutterState.OPEN and shutterMode.lower()=="normal":
+      mcm.closeShutter()
 
 def sanityCheck():
    state = mcm.getState()

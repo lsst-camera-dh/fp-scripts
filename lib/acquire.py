@@ -48,8 +48,10 @@ class TestCoordinator(object):
         # Supported shutter modes for main camera
         # None -- do nothing, leave the shutter in whatever state it is in
         # Normal -- open and close the shutter on each image acquisition
+        # Open -- open shutter and leave it open
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
+        fp.checkShutterStatus(self.shutterMode)
 
     def take_images(self):
         pass
