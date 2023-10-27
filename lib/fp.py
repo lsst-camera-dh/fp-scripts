@@ -19,9 +19,11 @@ def checkShutterStatus(shutterMode):
    state = mcm.getState()
    shutterState = state.getState(ShutterState)
    print "ShutterState: %s   ShuterMode: %s" % (shutterState, shutterMode)
-   if shutterState==ShutterState.CLOSED and shutterMode.lower()=="open":
+   if shutterState==ShutterState.CLOSED and shutterMode != None and shutterMode.lower()=="open":
+      print "Opening shutter"
       mcm.openShutter()
-   if shutterState==ShutterState.OPEN and shutterMode.lower()=="normal":
+   if shutterState==ShutterState.OPEN and shutterMode != None and shutterMode.lower()=="normal":
+      print "Closing shutter"
       mcm.closeShutter()
 
 def sanityCheck():
