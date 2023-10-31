@@ -52,6 +52,8 @@ class TestCoordinator(object):
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
         fp.checkShutterStatus(self.shutterMode)
+        # TODO: Make this a one-time option??
+        self.roiSpec = options.get('roispec')
 
     def take_images(self):
         pass
@@ -94,7 +96,7 @@ class TestCoordinator(object):
 
         if not self.noop:
             fits_header_data = self.create_fits_header_data(exposure, image_type)
-            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears, shutterMode=self.shutterMode, exposeTime=self.exposeTime, imageType=image_type)
+            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears, shutterMode=self.shutterMode, exposeTime=self.exposeTime, imageType=image_type, roiSpec=self.roiSpec)
             self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
             test_seq_num += 1
             return (image_name, file_list)

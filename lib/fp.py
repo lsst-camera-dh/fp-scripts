@@ -22,9 +22,11 @@ def checkShutterStatus(shutterMode):
    if shutterState==ShutterState.CLOSED and shutterMode != None and shutterMode.lower()=="open":
       print "Opening shutter"
       mcm.openShutter()
+      time.sleep(1.0) # Wait for open
    if shutterState==ShutterState.OPEN and shutterMode != None and shutterMode.lower()=="normal":
       print "Closing shutter"
       mcm.closeShutter()
+      time.sleep(1.0) # Wait for close
 
 def sanityCheck():
    state = mcm.getState()
@@ -49,7 +51,7 @@ def takeBias(fitsHeaderData, annotation=None, locations=None):
    # this could skip the startIntegration/endIntegration and got straigh to readout
    return takeExposure(fitsHeaderData=fitsHeaderData, annotation=annotation, locations=locations)
 
-def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1, shutterMode=None, exposeTime=None, imageType=None):
+def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locations=None, clears=1, shutterMode=None, exposeTime=None, imageType=None, roiSpec=None):
    sanityCheck()
    print "Setting FITS headers %s" % fitsHeaderData
 
@@ -71,9 +73,11 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       return (imageName, None)
    # if exposeTime is specified then we assume that exposeCommand will be programmed to fit within exposeTime.
    # and the MCM+shutter will take care of the overall exposure timing.
-   # This is the only mode in which guiding will work. 
+   # This is the only mode in which guiding will work.
    else:
-      openShutter = shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
+      openShutter = shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"
+      if roiSpec and openShutter:
+         initGuiders(roiSpec)
       mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
       #  Sleep for 70 ms to allow for clear which is part of integrate to complete
       time.sleep(CLEARDELAY)
