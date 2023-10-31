@@ -5,6 +5,7 @@ import sys
 import re
 import fp
 import ccob
+import pdu
 #import bot
 import math
 from pd import PhotodiodeReadout
@@ -51,6 +52,7 @@ class TestCoordinator(object):
         # Open -- open shutter and leave it open
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
+        pdu.turnOff("CCOB-Narrow")
         fp.checkShutterStatus(self.shutterMode)
 
     def take_images(self):
@@ -459,6 +461,7 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
         self.calibration_duration = options.getFloat('calibrate_duration', 0.2)
         self.ccob_thin = CcobThin("ccob-thin")
+        pdu.turnOn("CCOB-Narrow")
 
     # Insert additional CCOB Narrow specific FITS file data. Called from _take_image
     def create_fits_header_data(self, exposure, image_type):
