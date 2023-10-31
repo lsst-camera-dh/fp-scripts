@@ -527,13 +527,15 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                     self.nid += 1
                     (last_image_name, file_list) = self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
 
-                print "DARKS"
-                print self.shotDarks
-                integration, count = self.shotDarks.split()
-                self.exposeTime = float(integration)
-                for d in range(int(count)):
-                    self.nid += 1
-                    (last_image_name, file_list) = self.take_image(self.exposeTime, None, image_type='DARK')
+                if self.shotDarks:
+                    print "DARKS"
+                    print self.shotDarks
+
+                    integration, count = self.shotDarks.split()
+                    self.exposeTime = float(integration)
+                    for d in range(int(count)):
+                        self.nid += 1
+                        (last_image_name, file_list) = self.take_image(self.exposeTime, None, image_type='DARK')
 
         # Write calibration at end of data taking, using the last imageName
         self.calibrate(self.calibration_wavelengths, self.calibration_duration, last_image_name)
