@@ -73,7 +73,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    # and the MCM+shutter will take care of the overall exposure timing.
    # This is the only mode in which guiding will work. 
    else:
-      openShutter = shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
+      openShutter = shutterMode != None and shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
       mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
       #  Sleep for 70 ms to allow for clear which is part of integrate to complete
       time.sleep(CLEARDELAY)
