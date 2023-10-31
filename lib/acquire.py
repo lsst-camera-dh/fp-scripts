@@ -94,7 +94,7 @@ class TestCoordinator(object):
 
         if not self.noop:
             fits_header_data = self.create_fits_header_data(exposure, image_type)
-            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears, shutterMode=self.shutterMode, exposeTime=self.exposeTime)
+            image_name, file_list = fp.takeExposure(expose_command, fits_header_data, self.annotation, self.locations, self.clears, shutterMode=self.shutterMode, exposeTime=self.exposeTime, imageType=image_type)
             self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
             test_seq_num += 1
             return (image_name, file_list)
