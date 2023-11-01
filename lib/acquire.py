@@ -508,8 +508,11 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
                 self.ccob_thin.moveTo(X, float(x), 20)
+                time.sleep(1)
                 self.ccob_thin.moveTo(Y, float(y), 20)
+                time.sleep(1)
                 self.ccob_thin.moveTo(B, float(b), 8)
+                time.sleep(1)
                 self.ccob_thin.moveTo(U, float(u), 15)
                 self.ccob_thin.hyperSetWavelength(float(lamb))
                 expose_time=int(float(expose_time)*1000)
@@ -526,13 +529,15 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
                     self.nid += 1
                     (last_image_name, file_list) = self.take_bias_plus_image(duration, expose_command, symlink_image_type='%s_%s_%s' % (lamb, x, y))
 
-                print "DARKS"
-                print self.shotDarks
-                integration, count = self.shotDarks.split()
-                self.exposeTime = float(integration)
-                for d in range(int(count)):
-                    self.nid += 1
-                    (last_image_name, file_list) = self.take_image(self.exposeTime, None, image_type='DARK')
+                if self.shotDarks:
+                    print "DARKS"
+                    print self.shotDarks
+
+                    integration, count = self.shotDarks.split()
+                    self.exposeTime = float(integration)
+                    for d in range(int(count)):
+                        self.nid += 1
+                        (last_image_name, file_list) = self.take_image(self.exposeTime, None, image_type='DARK')
 
         # Write calibration at end of data taking, using the last imageName
         self.calibrate(self.calibration_wavelengths, self.calibration_duration, last_image_name)

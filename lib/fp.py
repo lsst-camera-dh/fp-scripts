@@ -75,7 +75,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    # and the MCM+shutter will take care of the overall exposure timing.
    # This is the only mode in which guiding will work.
    else:
-      openShutter = shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"
+      openShutter = shutterMode != None and shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
       if roiSpec and openShutter:
          initGuiders(roiSpec)
       mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
