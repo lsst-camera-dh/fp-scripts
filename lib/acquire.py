@@ -5,7 +5,6 @@ import sys
 import re
 import fp
 import ccob
-import pdu
 #import bot
 import math
 from pd import PhotodiodeReadout
@@ -52,7 +51,6 @@ class TestCoordinator(object):
         # Open -- open shutter and leave it open
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
-        pdu.turnOff("CCOB-Narrow")
         fp.checkShutterStatus(self.shutterMode)
 
     def take_images(self):
@@ -461,7 +459,6 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
         self.calibration_wavelengths = options.getList('calibrate_wavelength')
         self.calibration_duration = options.getFloat('calibrate_duration', 0.2)
         self.ccob_thin = CcobThin("ccob-thin")
-        pdu.turnOn("CCOB-Narrow")
 
     # Insert additional CCOB Narrow specific FITS file data. Called from _take_image
     def create_fits_header_data(self, exposure, image_type):
@@ -509,8 +506,11 @@ class CCOBNarrowTestCoordinator(BiasPlusImagesTestCoordinator):
             if not self.noop or self.skip - test_seq_num < len(self.exposures)*self.imcount*(self.bcount + 1):
                 print "Moving to b=%s u=%s x=%s y=%s lambda=%s, for shot time %s" % (b, u, x, y, lamb, expose_time)
                 self.ccob_thin.moveTo(X, float(x), 20)
+                time.sleep(1)
                 self.ccob_thin.moveTo(Y, float(y), 20)
+                time.sleep(1)
                 self.ccob_thin.moveTo(B, float(b), 8)
+                time.sleep(1)
                 self.ccob_thin.moveTo(U, float(u), 15)
                 self.ccob_thin.hyperSetWavelength(float(lamb))
                 expose_time=int(float(expose_time)*1000)
