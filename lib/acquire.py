@@ -154,6 +154,29 @@ class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
             for d in range(count):
                 self.take_bias_plus_image(integration, expose_command)
 
+class RampTestCoordinator(BiasPlusImagesTestCoordinator):
+    ''' A TestCoordinator for ramps '''
+    def __init__(self, options):
+        super(RampTestCoordinator, self).__init__(options, 'RAMP', 'RAMP')
+        self.ramps= options.getList('ramp')
+        self.led= options.get('led','uv')
+        self.current= options.getFloat('current',0.02)
+
+        ccob.turnOnLed(self.led,self.current)
+
+    def take_images(self):
+        for ramp in self.ramps:
+            integration, count = ramp.split()
+            integration = float(integration)
+            count = int(count)
+            expose_command = lambda: time.sleep(integration)
+
+            for d in range(count):
+                self.take_bias_plus_image(integration, expose_command)
+        print("LED is turned off")
+        ccob.turnOffLed()
+
+
 class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
     ''' A TestCoordinator for all tests that involve taking flatS with the flat field generator '''
     def __init__(self, options, test_type, image_type):
@@ -737,6 +760,11 @@ def do_bias(options):
 def do_dark(options):
     print "dark called %s" % options
     tc = DarkTestCoordinator(options)
+    tc.take_images()
+
+def do_ramp(options):
+    print "ramp called %s" % options
+    tc = RampTestCoordinator(options)
     tc.take_images()
 
 def do_flat(options):
