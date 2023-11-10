@@ -26,6 +26,8 @@ def turnOnLed(led="red", current=0.009):
    t1 = CCSTimeStamp.currentTime()
 
 def turnOffLed():
+   driver.setLedCurrent(0.0)    # not to overheat the board
+   driver.setExposureTime(0.1)
    driver.pulse()
    driver.startExposure()
 
