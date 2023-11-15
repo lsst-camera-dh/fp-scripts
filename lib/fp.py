@@ -63,20 +63,26 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
       # Sleep for 70 ms to allow for clear which is part of integrate to complete
       time.sleep(CLEARDELAY)
+      try:
+         if exposeCommand:
+            extraData = exposeCommand()
+            if extraData:
+               mcm.setHeaderKeywords(extraData)
 
-      if exposeCommand:
-         extraData = exposeCommand()
-         if extraData:
-            mcm.setHeaderKeywords(extraData)
-      mcm.endIntegration()
-      mcm.waitForImage()
+      except:
+         mcm.closeShutter()
+         raise
+
+      finally:
+         mcm.endIntegration()
+         mcm.waitForImage()
       return (imageName, None)
    # if exposeTime is specified then we assume that exposeCommand will be programmed to fit within exposeTime.
    # and the MCM+shutter will take care of the overall exposure timing.
    # This is the only mode in which guiding will work.
    else:
       openShutter = shutterMode != None and shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
-      if roiSpec and openShutter:
+      if roiSpec:
          initGuiders(roiSpec)
       mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
       #  Sleep for 70 ms to allow for clear which is part of integrate to complete
@@ -89,4 +95,5 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
       return (imageName, None)
 
 def initGuiders(roiSpec):
+   print "ROISPEC=%s " % roiSpec
    mcm.initGuiders(roiSpec)
