@@ -42,8 +42,10 @@ def prepLED(led="red", current=0.009, seconds=0.05):
    driver.setLedCurrent(current)
 
 def WaitAndReadLED():
-   while driver.pollEnd():
+   for i in range(10): # assuming we only have 1 sec delay at maximum
       time.sleep(0.1) # hopefully that is long enough?
+      if driver.pollEnd()==False:
+         break
    t2 = CCSTimeStamp.currentTime()
    after = driver.getAdcValues()
    driver.setLedCurrent(0.0)    # not to overheat the board
