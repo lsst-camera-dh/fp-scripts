@@ -201,11 +201,12 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         self.extra_delay_for_pd=self.extra_delay
         self.extra_delay=0.
 
-        self.darkInterrupt = options.get('darkInterrupt',False)
+        self.darkInterrupt = options.getBool('darkInterrupt')
         if self.darkInterrupt:
             self.darkInterruptBCount = options.getInt('darkbcount', 1)
             self.darkInterruptDarkList = options.getList('dark')
-            self.darkInterruptOptions = {"BCOUNT":self.darkInterruptBCount,"DARK":self.darkInterruptDarkList} 
+            # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
+            self.darkInterruptOptions = {"BCOUNT":self.darkInterruptBCount,"DARK":self.darkInterruptDarkList} # Add shutter state here if necessary
         else:
             self.darkInterruptOptions = None
 
@@ -304,6 +305,7 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(self.exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (self.current, self.wl_led, e_per_pixel, pair))
+                # We could also put the dark interrupt here?
             if self.darkInterrupt:
                 do_dark(self.darkInterruptOptions)
 
