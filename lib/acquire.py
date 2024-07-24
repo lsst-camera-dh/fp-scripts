@@ -203,7 +203,6 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
 
         self.darkInterrupt = options.getBool('darkInterrupt')
         if self.darkInterrupt:
-            self.darkInterruptBCount = options.getInt('darkbcount', 0)
             self.darkInterruptDarkList = options.getList('darkInterruptList') # This should be formatted in the same way as 'dark' is on usual dark config
             ## Shutter state for Darks?
             # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
