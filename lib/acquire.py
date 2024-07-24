@@ -201,6 +201,14 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         self.extra_delay_for_pd=self.extra_delay
         self.extra_delay=0.
 
+        self.darkInterrupt = options.get('darkInterrupt',False)
+        if self.darkInterrupt:
+            self.darkInterruptBCount = options.getInt('darkbcount', 1)
+            self.darkInterruptDarkList = options.getList('dark')
+            self.darkInterruptOptions = {"BCOUNT":self.darkInterruptBCount,"DARK":self.darkInterruptDarkList} 
+        else:
+            self.darkInterruptOptions = None
+
         if not self.ledConfig:
            raise Exception("Missing filter config file: %s" % self.ledConfigFile)
 
@@ -296,6 +304,8 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(self.exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (self.current, self.wl_led, e_per_pixel, pair))
+            if self.darkInterrupt:
+                do_dark(self.darkInterruptOptions)
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):
