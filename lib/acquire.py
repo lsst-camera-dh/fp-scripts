@@ -207,7 +207,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
             ## Shutter state for Darks?
             # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
         else:
-            self.darkInterruptOptions = None
+            self.darkInterruptDarkList = None
 
         if not self.ledConfig:
            raise Exception("Missing filter config file: %s" % self.ledConfigFile)
@@ -309,7 +309,7 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
                     for darkEntry in self.darkInterruptDarkList:
                         dark_expTime = float(darkEntry[0]) # Exposure time of one dark image
                         dark_imgNum = int(darkEntry[1]) # Number of exposures
-                        for num in dark_imgNum: 
+                        for num in range(dark_imgNum): 
                             self.take_image(dark_expTime, expose_command, image_type="DARK", symlink_image_type=None) # Need to update the symlink, and will need formatting of the symlink
                             # This will use the same expose_command as the flat image - is that ok? Or should we set it to the sleep command?
 
