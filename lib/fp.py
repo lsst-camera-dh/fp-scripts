@@ -1,8 +1,8 @@
 #!/usr/bin/env ccs-script
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
-from org.lsst.ccs.subsystem.ocsbridge.sim.MCM import StandbyState
-from org.lsst.ccs.subsystem.ocsbridge.sim.Shutter import ShutterState
+from org.lsst.ccs.subsystem.ocsbridge.states import StandbyState
+from org.lsst.ccs.subsystem.ocsbridge.states import ShutterState
 from java.time import Duration
 from ccs import proxies
 import time
