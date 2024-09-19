@@ -246,6 +246,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         if self.roiSpec is None:
             return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
         else:
+            self.exposeTime = exposure
             return ccob.flash(self.wl_led, self.current, self.flashtime)
 
     def compute_current(self, wl_led, e_per_pixel):
