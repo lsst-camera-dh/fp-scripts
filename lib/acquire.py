@@ -243,7 +243,10 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         print "CCOB will flash %s for %g sec with %g A" % ( self.wl_led, self.flashtime, self.current  )
         print "Flash mode"
 
-        return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
+        if self.roiSpec is None:
+            return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
+        else:
+            return ccob.flash(self.wl_led, self.current, self.flashtime, exposure)
 
     def compute_current(self, wl_led, e_per_pixel):
         e_per_pixel = float(e_per_pixel)
