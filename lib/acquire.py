@@ -225,6 +225,11 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         if use_pd:
             pd_readout = PhotodiodeReadout(exposure)
             pd_readout.start_accumulation()
+
+        if self.roiSpec is not None:
+            # guider mode uses exposeTime (for mcm) instead of exposure (for the fp-script shutter control)
+            self.exposeTime = self.exposure
+
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:
             # TODO: Why does this need the last argument - in fact it is not used?
@@ -246,7 +251,6 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
         if self.roiSpec is None:
             return ccob.flashAndWait(self.wl_led, self.current, self.flashtime, exposure)
         else:
-            self.exposeTime = exposure
             return ccob.flash(self.wl_led, self.current, self.flashtime)
 
     def compute_current(self, wl_led, e_per_pixel):
