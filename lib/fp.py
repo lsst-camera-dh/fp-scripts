@@ -55,8 +55,12 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    sanityCheck()
    print "Setting FITS headers %s" % fitsHeaderData
 
-   imageName = mcm.allocateImageName()
-   print "Image name: %s" % imageName
+   try:
+      imageName = mcm.allocateImageName()
+      print "Image name: %s" % imageName
+   except:
+      mcm.closeShutter()
+      raise
 
    # if exposeTime is None we assume that the exposeCommand will take care of implementing the exposure delay
    if not exposeTime:
@@ -81,17 +85,25 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    # and the MCM+shutter will take care of the overall exposure timing.
    # This is the only mode in which guiding will work.
    else:
+      
       openShutter = shutterMode != None and shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
-      if roiSpec:
-         initGuiders(roiSpec)
-      mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
-      #  Sleep for 70 ms to allow for clear which is part of integrate to complete
-      time.sleep(CLEARDELAY)
-      if exposeCommand:
-         extraData = exposeCommand()
-         if extraData:
-            mcm.setHeaderKeywords(extraData)
-      mcm.waitForImage()
+      try:
+         if roiSpec:
+            initGuiders(roiSpec)
+         mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
+         #  Sleep for 70 ms to allow for clear which is part of integrate to complete
+         time.sleep(CLEARDELAY)
+         if exposeCommand:
+            extraData = exposeCommand()
+            if extraData:
+               mcm.setHeaderKeywords(extraData)
+      except:
+         mcm.closeShutter()
+         raise 
+
+      finally:
+         mcm.waitForImage()
+
       return (imageName, None)
 
 def initGuiders(roiSpec):

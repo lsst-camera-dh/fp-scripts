@@ -62,11 +62,7 @@ def WaitAndReadLED():
        "MJD-PEND": t2
    }
 
-def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15, maxtime=1.3):
-   t=Thread(target=time.sleep,args=[exptime])
-   t.daemon=True
-   t.start()
-
+def flash(led="red", current=0.009, seconds=0.05, maxtime=1.3):
    global t1
    t1 = CCSTimeStamp.currentTime()
    accum=0.
@@ -81,7 +77,16 @@ def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15, maxtime=1.3)
       adc=WaitAndReadLED()
       accum+=adc["CCOBADC"]
 
-   t.join()
    adc["CCOBADC"]=accum
+   return adc
+
+def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15, maxtime=1.3):
+   t=Thread(target=time.sleep,args=[exptime])
+   t.daemon=True
+   t.start()
+
+   flash(led=led,current=current,seconds=seconds,maxtime=maxtime)
+   t.join()
+
    return adc
 
