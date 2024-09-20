@@ -60,6 +60,13 @@ class Config(dict):
 
   def getBool(self, key, defaultValue=None):
      value = self.get(key)
+
+     print("THIS IS THE VALUE: {}".format(value))
+
+     print("THIS IS THE KEY: {}".format(key))
+
+
+     print("THIS IS THE OBJECT: {}".format(self))
      if not value:
        if defaultValue != None:
           return defaultValue
