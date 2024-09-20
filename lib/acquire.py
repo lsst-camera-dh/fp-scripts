@@ -55,6 +55,15 @@ class TestCoordinator(object):
         # TODO: Make this a one-time option??
         self.roiSpec = options.get('roispec')
 
+        self.darkInterrupt = options.getBool('darkinterrupt',False)
+        if self.darkInterrupt:
+            self.darkInterruptDarkList = options.getList('darkinterruptdarklist') # This should be formatted in the same way as 'dark' is on usual dark config
+            ## Shutter state for Darks?
+            # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
+        else:
+            self.darkInterruptDarkList = None
+
+
     def take_images(self):
         pass
 
@@ -304,6 +313,16 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(self.exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (self.current, self.wl_led, e_per_pixel, pair))
+                # Take darks specified by self.darkInterruptDarkList
+                if self.darkInterrupt:
+                    if self.darkInterruptDarkList.__contains__(",\n"):
+                        self.darkInterruptDarkList = self.darkInterruptDarkList.split(",\n")
+                    for darkEntry in self.darkInterruptDarkList:    
+                        dark_expTime = float(darkEntry.split(" ")[0]) # Exposure time of one dark image
+                        dark_imgNum = int(darkEntry.split(" ")[1]) # Number of exposures
+                        for num in range(dark_imgNum): 
+                            self.take_image(dark_expTime, expose_command, image_type="DARK", symlink_image_type=None) # Need to update the symlink, and will need formatting of the symlink
+                            # This will use the same expose_command as the flat image - is that ok? Or should we set it to the sleep command?
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):

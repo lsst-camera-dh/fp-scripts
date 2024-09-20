@@ -85,7 +85,7 @@ def flashAndWait(led="red", current=0.009, seconds=0.05,exptime=15, maxtime=1.3)
    t.daemon=True
    t.start()
 
-   flash(led=led,current=current,seconds=seconds,maxtime=maxtime)
+   adc = flash(led=led,current=current,seconds=seconds,maxtime=maxtime)
    t.join()
 
    return adc
