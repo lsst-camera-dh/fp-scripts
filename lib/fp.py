@@ -98,10 +98,10 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
             if extraData:
                mcm.setHeaderKeywords(extraData)
       except:
+         mcm.closeShutter()
          raise 
 
       finally:
-         mcm.closeShutter()
          mcm.waitForImage()
 
       return (imageName, None)
