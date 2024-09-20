@@ -55,7 +55,7 @@ class TestCoordinator(object):
         # TODO: Make this a one-time option??
         self.roiSpec = options.get('roispec')
 
-        self.darkInterrupt = options.getBool('darkinterrupt',None)
+        self.darkInterrupt = options.getBool('darkinterrupt',False)
         if self.darkInterrupt:
             self.darkInterruptDarkList = options.getList('darkinterruptdarklist') # This should be formatted in the same way as 'dark' is on usual dark config
             ## Shutter state for Darks?

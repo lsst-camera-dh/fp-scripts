@@ -47,5 +47,4 @@ if options.run:
 import config
 
 cfg = config.parseConfig(args[0])
-# print(cfg)
 config.execute(cfg, {"dry_run": options.dry_run, "run": options.run, "symlink": options.symlink, "skip": options.skip, "limit": options.limit})
