@@ -28,13 +28,13 @@ from org.lsst.ccs.imagenaming import ImageName
 from org.lsst.ccs.bus.messages import StatusSubsystemData
 from org.lsst.ccs.bus.data import KeyValueData
 
-bbsub = CCS.attachProxy("ccob")
+bbsub = CCS.attachProxy("ts8-bench",True)
 
 ##  The below 3 lines are needed for workaround.
 #agentName = "ts8-bench"
 #devName   = "PhotoDiode"
 agentName = bbsub.getAgentProperty("agentName")
-bbsub = CCS.attachProxy(agentName) # re-attach to ccs subsystem
+bbsub = CCS.attachProxy(agentName,True) # re-attach to ccs subsystem
 if  agentName == "ts8-bench":
     bbsub.PhotoDiode = bbsub.Monitor2
     devName = "Monitor2"

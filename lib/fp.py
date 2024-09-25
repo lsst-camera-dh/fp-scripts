@@ -1,7 +1,8 @@
 #!/usr/bin/env ccs-script
 from org.lsst.ccs.scripting import CCS
 from org.lsst.ccs.bus.states import AlertState
-from org.lsst.ccs.subsystem.ocsbridge.sim.MCM import StandbyState
+#from org.lsst.ccs.subsystem.ocsbridge.sim.MCM import StandbyState
+from org.lsst.ccs.subsystem.ocsbridge.states import StandbyState
 from java.time import Duration
 from ccs import proxies
 import jarray
@@ -16,7 +17,7 @@ import bot
 CLEARDELAY=0.07
 #CLEARDELAY=2.35
 
-mcm = CCS.attachProxy("mcm") # this will be override by CCS.aliases
+mcm = CCS.attachProxy("ts8-mcm",True) # this will be override by CCS.aliases
 agentName = mcm.getAgentProperty("agentName")
 imageTimeout = Duration.ofSeconds(60)
 
