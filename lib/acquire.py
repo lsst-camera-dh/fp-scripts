@@ -64,9 +64,6 @@ class TestCoordinator(object):
         else:
             self.darkInterruptDarkList = None
 
-    def __del__(self):
-        fp.checkShutterStatus("close")
-
     def take_images(self):
         pass
 

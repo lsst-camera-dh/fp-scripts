@@ -6,6 +6,7 @@ from org.lsst.ccs.subsystem.ocsbridge.states import ShutterState
 from java.time import Duration
 from ccs import proxies
 import time
+import traceback
 
 CLEARDELAY=0.07
 #CLEARDELAY=2.35
@@ -74,6 +75,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
                mcm.setHeaderKeywords(extraData)
 
       except:
+         traceback.print_exc()
          mcm.closeShutter()
          raise
 
@@ -98,6 +100,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
             if extraData:
                mcm.setHeaderKeywords(extraData)
       except:
+         traceback.print_exc()
          mcm.closeShutter()
          raise 
 
