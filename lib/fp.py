@@ -23,7 +23,7 @@ def checkShutterStatus(shutterMode):
       print "Opening shutter"
       mcm.openShutter()
       time.sleep(1.0) # Wait for open
-   if shutterState==ShutterState.OPEN and shutterMode != None and shutterMode.lower()=="normal":
+   if shutterState==ShutterState.OPEN and shutterMode != None and ( shutterMode.lower()=="normal" or shutterMode.lower()=="close" ):
       print "Closing shutter"
       mcm.closeShutter()
       time.sleep(1.0) # Wait for close

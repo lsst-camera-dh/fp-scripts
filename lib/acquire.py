@@ -49,6 +49,7 @@ class TestCoordinator(object):
         # None -- do nothing, leave the shutter in whatever state it is in
         # Normal -- open and close the shutter on each image acquisition
         # Open -- open shutter and leave it open
+        # Close -- close shutter and leave it close
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
         fp.checkShutterStatus(self.shutterMode)
@@ -63,6 +64,8 @@ class TestCoordinator(object):
         else:
             self.darkInterruptDarkList = None
 
+    def __del__(self):
+        fp.checkShutterStatus("close")
 
     def take_images(self):
         pass
