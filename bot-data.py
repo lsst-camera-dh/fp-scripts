@@ -55,6 +55,6 @@ try:
 except:
     raise
 
-finally
+finally:
     libfp.checkShutterStatus("CLOSE")
 
