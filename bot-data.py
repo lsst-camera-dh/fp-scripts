@@ -9,6 +9,7 @@ from ccs import versions
 from ccs import configs
 from java.lang import Boolean
 from java.time import Duration
+import fp as libfp
 
 # Temporary work around for problems with CCS responsiveness
 CCS.setDefaultTimeout(Duration.ofSeconds(30))
@@ -46,5 +47,14 @@ if options.run:
 
 import config
 
-cfg = config.parseConfig(args[0])
-config.execute(cfg, {"dry_run": options.dry_run, "run": options.run, "symlink": options.symlink, "skip": options.skip, "limit": options.limit})
+
+try:
+    cfg = config.parseConfig(args[0])
+    config.execute(cfg, {"dry_run": options.dry_run, "run": options.run, "symlink": options.symlink, "skip": options.skip, "limit": options.limit})
+
+except:
+    raise
+
+finally:
+    libfp.checkShutterStatus("CLOSE")
+
