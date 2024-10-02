@@ -137,10 +137,14 @@ class BiasTestCoordinator(TestCoordinator):
     def take_images(self):
         self.take_bias_images(self.count)
 
-class PreimageTestCoordinator(BiasTestCoordinator):
+class PreimageTestCoordinator(TestCoordinator):
     ''' A TestCoordinator for taking only prebias images '''
     def __init__(self, options):
         super(PreimageTestCoordinator, self).__init__(options, 'PREIMAGE', 'BIAS')
+        self.count = options.getInt('count', 10)
+
+    def take_images(self):
+        self.take_bias_images(self.count)
 
 class BiasPlusImagesTestCoordinator(TestCoordinator):
     ''' Base class for all tests that involve n bias images per test image'''
