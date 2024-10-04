@@ -151,6 +151,9 @@ class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
             count = int(count)
             expose_command = lambda: time.sleep(integration)
 
+            if self.roiSpec is not None:
+                self.exposeTime = integration
+
             for d in range(count):
                 self.take_bias_plus_image(integration, expose_command)
 
