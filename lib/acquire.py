@@ -153,7 +153,16 @@ class BiasPlusImagesTestCoordinator(TestCoordinator):
         self.bcount = int(options.get('bcount', '1'))
 
     def take_bias_plus_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
+        # this is a workaround to enable guider with dark. self.exposeTime needs to get set to start the guider but it is also used for a bias.
+        exposeTime = None
+        if self.exposeTime is not None:
+            exposeTime = self.exposeTime
+            self.exposeTime = None
         self.take_bias_images(self.bcount)
+        if exposeTime is not None:
+            self.exposeTime = exposeTime
+            exposeTime = None
+
         return self.take_image(exposure, expose_command, image_type, symlink_image_type)
 
 class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
@@ -167,7 +176,8 @@ class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
             integration, count = dark.split()
             integration = float(integration)
             count = int(count)
-            expose_command = lambda: time.sleep(integration)
+#            expose_command = lambda: time.sleep(integration)
+            expose_command = None
 
             if self.roiSpec is not None:
                 self.exposeTime = integration
