@@ -58,6 +58,7 @@ class TestCoordinator(object):
 
         self.darkInterrupt = options.getBool('darkinterrupt',False)
         if self.darkInterrupt:
+            self.darkInterruptThreshold = options.getInt("darkinterruptthreshold",110000)
             self.darkInterruptDarkList = options.getList('darkinterruptdarklist') # This should be formatted in the same way as 'dark' is on usual dark config
             ## Shutter state for Darks?
             # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
@@ -176,11 +177,14 @@ class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
             integration, count = dark.split()
             integration = float(integration)
             count = int(count)
-#            expose_command = lambda: time.sleep(integration)
-            expose_command = None
 
             if self.roiSpec is not None:
+                # guider mode, mcm takes care of timing
                 self.exposeTime = integration
+                expose_command = None
+            else:
+                # legacy mode, fp-script takes care of timing
+                expose_command = lambda: time.sleep(integration)
 
             for d in range(count):
                 self.take_bias_plus_image(integration, expose_command)
@@ -336,7 +340,7 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             for pair in range(2):
                 self.take_image(self.exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (self.current, self.wl_led, e_per_pixel, pair))
                 # Take darks specified by self.darkInterruptDarkList
-                if self.darkInterrupt:
+                if self.darkInterrupt and self.darkInterruptThreshold<e_per_pixel:
                     if self.darkInterruptDarkList.__contains__(",\n"):
                         self.darkInterruptDarkList = self.darkInterruptDarkList.split(",\n")
                     for darkEntry in self.darkInterruptDarkList:    
