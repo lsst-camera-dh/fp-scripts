@@ -357,7 +357,7 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(SuperFlatTestCoordinator, self).create_fits_header_data(exposure, image_type)
-        if image_type != 'BIAS':
+        if image_type != 'BIAS' and self.fluxlevel is not None:
             data.update({
 			'FILTER1': self.fluxlevel
 			})
@@ -377,7 +377,7 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
             return 'H'
         else:
             self.test_type="SFLAT_?"
-            self.fluxlevel="?"
+            self.fluxlevel=None
             return '?'
 
     def take_images(self):
