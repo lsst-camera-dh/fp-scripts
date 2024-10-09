@@ -10,6 +10,7 @@ from ccs import configs
 from java.lang import Boolean
 from java.time import Duration
 import fp as libfp
+import traceback
 
 # Temporary work around for problems with CCS responsiveness
 CCS.setDefaultTimeout(Duration.ofSeconds(30))
@@ -53,6 +54,7 @@ try:
     config.execute(cfg, {"dry_run": options.dry_run, "run": options.run, "symlink": options.symlink, "skip": options.skip, "limit": options.limit})
 
 except:
+    traceback.print_exc()
     raise
 
 finally:
