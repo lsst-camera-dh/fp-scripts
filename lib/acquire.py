@@ -329,8 +329,9 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
                     for darkEntry in self.darkInterruptDarkList:    
                         dark_expTime = float(darkEntry.split(" ")[0]) # Exposure time of one dark image
                         dark_imgNum = int(darkEntry.split(" ")[1]) # Number of exposures
+			dark_exposeCommand = lambda: time.sleep(dark_expTime)
                         for num in range(dark_imgNum): 
-                            self.take_image(dark_expTime, expose_command, image_type="DARK", symlink_image_type=None) # Need to update the symlink, and will need formatting of the symlink
+                            self.take_image(dark_expTime, dark_exposeCommand, image_type="DARK", symlink_image_type=None) # Need to update the symlink, and will need formatting of the symlink
                             # This will use the same expose_command as the flat image - is that ok? Or should we set it to the sleep command?
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
