@@ -58,6 +58,7 @@ class TestCoordinator(object):
 
         self.darkInterrupt = options.getBool('darkinterrupt',False)
         if self.darkInterrupt:
+            self.darkInterruptThreshold = options.getInt("darkinterruptthreshold",110000)
             self.darkInterruptDarkList = options.getList('darkinterruptdarklist') # This should be formatted in the same way as 'dark' is on usual dark config
             ## Shutter state for Darks?
             # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
@@ -153,7 +154,16 @@ class BiasPlusImagesTestCoordinator(TestCoordinator):
         self.bcount = int(options.get('bcount', '1'))
 
     def take_bias_plus_image(self, exposure, expose_command, image_type=None, symlink_image_type=None):
+        # this is a workaround to enable guider with dark. self.exposeTime needs to get set to start the guider but it is also used for a bias.
+        exposeTime = None
+        if self.exposeTime is not None:
+            exposeTime = self.exposeTime
+            self.exposeTime = None
         self.take_bias_images(self.bcount)
+        if exposeTime is not None:
+            self.exposeTime = exposeTime
+            exposeTime = None
+
         return self.take_image(exposure, expose_command, image_type, symlink_image_type)
 
 class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
@@ -167,7 +177,14 @@ class DarkTestCoordinator(BiasPlusImagesTestCoordinator):
             integration, count = dark.split()
             integration = float(integration)
             count = int(count)
-            expose_command = lambda: time.sleep(integration)
+
+            if self.roiSpec is not None:
+                # guider mode, mcm takes care of timing
+                self.exposeTime = integration
+                expose_command = None
+            else:
+                # legacy mode, fp-script takes care of timing
+                expose_command = lambda: time.sleep(integration)
 
             for d in range(count):
                 self.take_bias_plus_image(integration, expose_command)
@@ -323,7 +340,7 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             for pair in range(2):
                 self.take_image(self.exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (self.current, self.wl_led, e_per_pixel, pair))
                 # Take darks specified by self.darkInterruptDarkList
-                if self.darkInterrupt:
+                if self.darkInterrupt and self.darkInterruptThreshold<e_per_pixel:
                     if self.darkInterruptDarkList.__contains__(",\n"):
                         self.darkInterruptDarkList = self.darkInterruptDarkList.split(",\n")
                     for darkEntry in self.darkInterruptDarkList:    
@@ -341,7 +358,7 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
 
     def create_fits_header_data(self, exposure, image_type):
         data = super(SuperFlatTestCoordinator, self).create_fits_header_data(exposure, image_type)
-        if image_type != 'BIAS':
+        if image_type != 'BIAS' and self.fluxlevel is not None:
             data.update({
 			'FILTER1': self.fluxlevel
 			})
@@ -361,7 +378,7 @@ class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
             return 'H'
         else:
             self.test_type="SFLAT_?"
-            self.fluxlevel="?"
+            self.fluxlevel=None
             return '?'
 
     def take_images(self):

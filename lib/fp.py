@@ -67,7 +67,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    if not exposeTime:
       mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
       # Sleep for 70 ms to allow for clear which is part of integrate to complete
-      time.sleep(CLEARDELAY)
+      time.sleep(clears * CLEARDELAY)
       try:
          if exposeCommand:
             extraData = exposeCommand()
@@ -94,7 +94,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
             initGuiders(roiSpec)
          mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
          #  Sleep for 70 ms to allow for clear which is part of integrate to complete
-         time.sleep(CLEARDELAY)
+         time.sleep(clears * CLEARDELAY)
          if exposeCommand:
             extraData = exposeCommand()
             if extraData:
