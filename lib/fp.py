@@ -28,6 +28,10 @@ def checkShutterStatus(shutterMode):
       print "Closing shutter"
       mcm.closeShutter()
       time.sleep(1.0) # Wait for close
+   if shutterState==ShutterState.OPEN and shutterMode != None and ( shutterMode.lower()=="projector"):
+      print "Closing shutter"
+      mcm.closeShutter()
+      time.sleep(1.0)
 
 def sanityCheck():
    state = mcm.getState()
@@ -102,7 +106,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
          else:
             # Treat it like a flat or a persistence case
             mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
-            
+
          #  Sleep for 70 ms to allow for clear which is part of integrate to complete
          time.sleep(clears * CLEARDELAY)
          if exposeCommand:
