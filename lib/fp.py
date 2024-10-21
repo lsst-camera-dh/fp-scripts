@@ -19,7 +19,7 @@ imageTimeout = Duration.ofSeconds(60)
 def checkShutterStatus(shutterMode):
    state = mcm.getState()
    shutterState = state.getState(ShutterState)
-   print "ShutterState: %s   ShuterMode: %s" % (shutterState, shutterMode)
+   print "ShutterState: %s   ShutterMode: %s" % (shutterState, shutterMode)
    if shutterState==ShutterState.CLOSED and shutterMode != None and shutterMode.lower()=="open":
       print "Opening shutter"
       mcm.openShutter()
@@ -88,11 +88,21 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    # This is the only mode in which guiding will work.
    else:
       
-      openShutter = shutterMode != None and shutterMode.lower() == "normal" and imageType!="DARK" and imageType!="BIAS"  
+      openShutter = shutterMode != None and (shutterMode.lower() == "normal" or shutterMode.lower() =='projector') and imageType!="DARK" and imageType!="BIAS"  
       try:
          if roiSpec:
             initGuiders(roiSpec)
-         mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
+
+         if shutterMode.lower()=='projector':
+            # handle the projector case
+            mcm.openShutter()
+            mcm.takeImage(imageName, False, exposeTime, clears, annotation, locations, fitsHeaderData)
+            # time.sleep(exposeTime) # might need to implement this if it does not wait to execute mcm.takeImage
+            mcm.closeShutter()
+         else:
+            # Treat it like a flat or a persistence case
+            mcm.takeImage(imageName, openShutter, exposeTime, clears, annotation, locations, fitsHeaderData)
+            
          #  Sleep for 70 ms to allow for clear which is part of integrate to complete
          time.sleep(clears * CLEARDELAY)
          if exposeCommand:

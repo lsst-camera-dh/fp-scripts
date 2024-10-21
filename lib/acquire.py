@@ -47,9 +47,10 @@ class TestCoordinator(object):
         self.extra_delay = options.getFloat('extradelay', 0)
         # Supported shutter modes for main camera
         # None -- do nothing, leave the shutter in whatever state it is in
-        # Normal -- open and close the shutter on each image acquisition
+        # Normal -- open and close the shutter on each fp-script call
         # Open -- open shutter and leave it open
         # Close -- close shutter and leave it close
+        # Projector -- open and close the shutter on each
         self.shutterMode = options.get('shutter', None)
         self.exposeTime = None
         fp.checkShutterStatus(self.shutterMode)
