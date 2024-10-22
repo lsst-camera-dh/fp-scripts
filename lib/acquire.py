@@ -346,9 +346,33 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
                     for darkEntry in self.darkInterruptDarkList:    
                         dark_expTime = float(darkEntry.split(" ")[0]) # Exposure time of one dark image
                         dark_imgNum = int(darkEntry.split(" ")[1]) # Number of exposures
-			dark_exposeCommand = lambda: time.sleep(dark_expTime)
+						dark_exposeCommand = lambda: time.sleep(dark_expTime)
                         for num in range(dark_imgNum): 
-                            self.take_image(dark_expTime, dark_exposeCommand, image_type="DARK", symlink_image_type=None) # Need to update the symlink, and will need formatting of the symlink
+							### Start changes
+							image_type = image_type if image_type else self.image_type
+					        symlink_image_type = symlink_image_type if symlink_image_type else self.symlink_image_type(image_type)
+					        global test_seq_num
+					        if test_seq_num >= self.limit:
+					            print "Stopping since --limit reached before tSeqNum = %d" % test_seq_num
+					            sys.exit()
+					
+					        #if self.extra_delay > 0:
+					        #    print "Extra delay %g" % self.extra_delay
+					        #    time.sleep(self.extra_delay)
+					
+					        if not self.noop:
+					            dark_fits_header_data = self.create_fits_header_data(exposure, "DARK")
+					            image_name, file_list = fp.takeExposure(dark_exposeCommand, dark_fits_header_data, self.annotation, self.locations, self.clears, shutterMode=self.shutterMode, exposeTime=dark_expTime, imageType="DARK", roiSpec=self.roiSpec)
+					            self.create_symlink(file_list, self.symlink_test_type(self.test_type), symlink_image_type)
+					            test_seq_num += 1
+					            # return (image_name, file_list)
+					        else:
+					            test_seq_num += 1
+					            self.noop = test_seq_num < self.skip
+					            # return (None, None)
+							###
+				
+                            # self.take_image(dark_expTime, dark_exposeCommand, image_type="DARK", symlink_image_type=None) # Need to update the symlink, and will need formatting of the symlink
                             # This will use the same expose_command as the flat image - is that ok? Or should we set it to the sleep command?
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
