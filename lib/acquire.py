@@ -263,7 +263,7 @@ class FlatFieldTestCoordinator(BiasPlusImagesTestCoordinator):
 
         if self.roiSpec is not None:
             # guider mode uses exposeTime (for mcm) instead of exposure (for the fp-script shutter control)
-            self.exposeTime = self.exposure
+            self.exposeTime = exposure
 
         image_name, file_list = super(FlatFieldTestCoordinator, self).take_image(exposure, expose_command, image_type, symlink_image_type)
         if use_pd:

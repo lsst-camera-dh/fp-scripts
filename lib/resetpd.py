@@ -39,7 +39,7 @@ send :INP:STAT ON
 waitAccum 20
 send TRAC:FEED:CONT NEV
 send :TRIG:SOUR TIM
-send :TRIG:TIM 0.0167
+send :TRIG:TIM 0.02
 send :SENS:CURR:MED:RANK 1
 send :SENS:CURR:MED:STAT 1
 """
