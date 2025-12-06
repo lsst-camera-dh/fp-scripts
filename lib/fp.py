@@ -21,6 +21,8 @@ mcm = CCS.attachProxy("ts8-mcm",True) # this will be override by CCS.aliases
 agentName = mcm.getAgentProperty("agentName")
 imageTimeout = Duration.ofSeconds(60)
 
+fp= CCS.attachProxy("ts8-fp",False) # this will be override by CCS.aliases
+
 def sanityCheck():
    state = mcm.getState()
    alert = state.getState(AlertState)
@@ -51,7 +53,7 @@ def takeExposure(exposeCommand=None, fitsHeaderData=None, annotation=None, locat
    imageName = mcm.allocateImageName() 
    print "Image name: %s" % imageName
 
-   mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData)
+   mcm.clearAndStartNamedIntegration(imageName, False, clears, annotation, locations, fitsHeaderData, timeout=Duration.ofSeconds(4))
    # Sleep for 70 ms to allow for clear which is part of integrate to complete
    time.sleep(CLEARDELAY)
 

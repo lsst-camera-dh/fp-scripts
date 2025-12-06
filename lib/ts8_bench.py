@@ -21,7 +21,7 @@ def setNDFilter(filter):
       return
 #   bb.Monochromator().setSlitSize(1,int(re.match(r"slit(\d+)",filter).group(1)))
 #   bb.Monochromator().setSlitSize(2,int(re.match(r"slit(\d+)",filter).group(1)))
-   bb.NeutralFWheel().setNamedPosition(filter)
+#   bb.NeutralFWheel().setNamedPosition(filter)
 
 def setColorFilter(filter):
    sanityCheck()

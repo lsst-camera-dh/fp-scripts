@@ -471,7 +471,7 @@ class ScanTestCoordinator(TestCoordinator):
             readRows = fp.fp.getSequencerParameter("ReadRows")
             postRows = fp.fp.getSequencerParameter("PostRows")
             scanMode = fp.fp.isScanEnabled()
-            idleFlushTimeout = fp.fp.getConfigurationParameterValue("sequencerConfig","idleFlushTimeout")
+#            idleFlushTimeout = fp.fp.getConfigurationParameterValue("sequencerConfig","idleFlushTimeout")
             print "Initial sequencer parameters"
 
             print "preCols="  , preCols
@@ -484,7 +484,7 @@ class ScanTestCoordinator(TestCoordinator):
             print "postRows=" , postRows
 
             print "scanMode=" , scanMode
-            print "idleFlushTimeout=" , idleFlushTimeout
+#            print "idleFlushTimeout=" , idleFlushTimeout
 
             # set up scan mode
             fp.fp.sequencerConfig().submitChanges(
@@ -499,12 +499,12 @@ class ScanTestCoordinator(TestCoordinator):
                 "postRows": self.postrows,
                 "overRows": self.overrows,
                 "scanMode": True,
-                "idleFlushTimeout": -1
+#                "idleFlushTimeout": -1
                 }
             )
             fp.fp.applySubmittedChanges()
-            if idleFlushTimeout != -1:
-                fp.clear()
+#            if idleFlushTimeout != -1:
+#                fp.clear()
 
         exposure = 1.0
         expose_command = lambda: time.sleep(exposure)
@@ -527,8 +527,8 @@ class ScanTestCoordinator(TestCoordinator):
         # Restore settings
         fp.fp.dropAllChanges()
 
-        if idleFlushTimeout != -1:
-            fp.clear()
+#        if idleFlushTimeout != -1:
+#            fp.clear()
 
 def do_bias(options):
     print "bias called %s" % options
