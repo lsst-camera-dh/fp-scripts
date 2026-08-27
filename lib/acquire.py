@@ -39,6 +39,15 @@ class TestCoordinator(object):
         self.clears = options.getInt('clears', 1)
         self.extra_delay = options.getFloat('extradelay', 0)
 
+        self.darkInterrupt = options.getBool('darkinterrupt',False)
+        if self.darkInterrupt:
+            self.darkInterruptThreshold = options.getInt("darkinterruptthreshold",110000)
+            self.darkInterruptDarkList = options.getList('darkinterruptdarklist') # This should be formatted in the same way as 'dark' is on usual dark config
+            ## Shutter state for Darks?
+            # self.darkInterruptShutter = options.get("darkShutter") # Will the flat pairs now not update the shutter state?
+        else:
+            self.darkInterruptDarkList = None
+
     def take_images(self):
         pass
 
@@ -205,6 +214,23 @@ class FlatPairTestCoordinator(FlatFieldTestCoordinator):
             self.take_bias_images(self.bcount)
             for pair in range(2):
                 self.take_image(exposure, expose_command, symlink_image_type='%s_%s_%s_flat%d' % (nd_filter, self.wl_filter, e_per_pixel, pair))
+
+                if self.darkInterrupt and self.darkInterruptThreshold < e_per_pixel:
+                    if self.darkInterruptDarkList.__contains__(",\n"):
+                        self.darkInterruptDarkList = self.darkInterruptDarkList.split(",\n")
+                    
+                    for darkEntry in self.darkInterruptDarkList:
+                        try:
+                            dark_expTime = float(darkEntry.split(" ")[0]) # Exposure time of one dark image
+                            dark_imgNum = int(darkEntry.split(" ")[1]) # Number of exposures
+                        except:
+                            print "Warning: Dark list entry '%s' is not in 'expTime num' format. Skipping." % darkEntry
+                            continue
+
+                        dark_exposeCommand = lambda: time.sleep(dark_expTime)
+
+                        for num in range(dark_imgNum):
+                            self.take_image(dark_expTime, dark_exposeCommand, image_type="DARK", symlink_image_type=None)
 
 class SuperFlatTestCoordinator(FlatFieldTestCoordinator):
     def __init__(self, options):

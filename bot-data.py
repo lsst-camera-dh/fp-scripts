@@ -1,4 +1,4 @@
-#!/usr/bin/env ccs-script
+#!/lsst/ccs/develop-guider/bin/ccs-script
 import sys
 import time
 from optparse import OptionParser
@@ -37,11 +37,11 @@ CCS.aliases = {
 }
 
 # Assume if run is set we are running under eTraveler
-if options.run:
-  fp = CCS.attachProxy('focal-plane')
-  time.sleep(10.0)
-  versions.write_versions(fp)
-  configs.write_config(fp, ['Sequencer', 'Rafts'])
+#if options.run:
+#  fp = CCS.attachProxy('focal-plane')
+#  time.sleep(10.0)
+#  versions.write_versions(fp)
+#  configs.write_config(fp, ['Sequencer', 'Rafts'])
 
 import config
 

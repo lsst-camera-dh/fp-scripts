@@ -42,11 +42,11 @@ def openShutter(exposure):
    print "Open shutter for %s seconds" % exposure
 #   bb.Monochromator().openShutter()
 #   bb.ProjectorShutter().openShutter()
-   bb.TS8Shutter().setShutterPosition(True)
+#   bb.TS8Shutter().setShutterPosition(True)
    time.sleep(exposure)
 #   bb.Monochromator().closeShutter()
 #   bb.ProjectorShutter().closeShutter()
-   bb.TS8Shutter().setShutterPosition(False)
+#   bb.TS8Shutter().setShutterPosition(False)
    time.sleep(close_delay)  # give time for shutter to close before readout starts
    print "Shutter closed"
 
