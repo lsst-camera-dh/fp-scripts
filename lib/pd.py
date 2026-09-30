@@ -220,7 +220,7 @@ class PhotodiodeReadout(object):
 
         ecsvFile = ECSVFile([timeColumn,valueColumn], dataString, "%s_photodiode.ecsv" % imageName, "photodiode", imageName)
         ecsvFile.setDelimiter(" ")
-        ecsvFile.addMetaData({"CALIBCLS": "lsst.ip.isr.PhotodiodeCalib", "OBSTYPE": "PHOTODIODE"})
+        ecsvFile.addMetaData({"CALIBCLS": "lsst.ip.isr.PhotodiodeCalib", "OBSTYPE": "PHOTODIODE", "SIMPLE": "True", "BITPIX": -32, "NAXIS": 1, "EXTEND": "False"})
 
         msg = StatusSubsystemData(KeyValueData(AdditionalFile.EVENT_KEY, ecsvFile))
         CCS.getMessagingAccess().sendStatusMessage(msg)
